@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int               @id @default(autoincrement())
+  nome        String
+  email       String            @unique
+  password    String?
+  role        String?           // ⚠️ Mantém os dados antigos (ex: "ADMIN")
+  criadoEm    DateTime          @default(now())
+  isActive    Boolean           @default(false)
+
+  // 🆕 Nova relação com o sistema de permissões
+  roleId      Int?
+  roleRel     Role?             @relation(fields: [roleId], references: [id])
+
+  condominios Condominio[]      @relation("GestorCondominio")
+  eventos     Evento[]
+  pagamentos  Pagamento[]
+  servicos    ServicoAgendado[]
+  historicos  HistoricoPagamento[]
+}
+
+model Role {
+  id           Int              @id @default(autoincrement())
+  nome         String           @unique
+  descricao    String?
+  permissoes   RolePermissao[]
+  users        User[]           // relação automática com User.roleRel
+}
+
+model Permissao {
+  id           Int              @id @default(autoincrement())
+  nome         String           @unique   // Ex: "visualizar_pagamentos"
+  descricao    String?
+  roles        RolePermissao[]
+}
+
+model RolePermissao {
+  id           Int              @id @default(autoincrement())
+  roleId       Int
+  permissaoId  Int
+  role         Role             @relation(fields: [roleId], references: [id])
+  permissao    Permissao        @relation(fields: [permissaoId], references: [id])
+}
+
+model Condominio {
+  id          Int        @id @default(autoincrement())
+  nome        String
+  localizacao String
+  gestorId    Int
+  criadoEm    DateTime   @default(now())
+  gestor      User       @relation("GestorCondominio", fields: [gestorId], references: [id])
+  edificios   Edificio[]
+  eventos     Evento[]
+}
+
+model Edificio {
+  id                 Int               @id @default(autoincrement())
+  nome               String
+  endereco           String?
+  numeroAndares      Int?
+  numeroApartamentos Int?
+  condominioId       Int
+  criadoEm           DateTime          @default(now())
+
+  condominio         Condominio        @relation(fields: [condominioId], references: [id])
+  fracoes            Fracao[]
+  servicos           ServicoAgendado[]
+}
+
+model Fracao {
+  id             Int           @id @default(autoincrement())
+  numero         String
+  tipo           String
+  estado         EstadoFracao
+  edificioId     Int
+  proprietarioId Int?
+  inquilinoId    Int?          @unique
+
+  edificio       Edificio      @relation(fields: [edificioId], references: [id])
+  inquilino      Inquilino?    @relation(fields: [inquilinoId], references: [id])
+  proprietario   Proprietario? @relation(fields: [proprietarioId], references: [id])
+  pagamentos     Pagamento[]
+}
+
+model Proprietario {
+  id               Int              @id @default(autoincrement())
+  nome             String
+  email            String?
+  telefone         String?
+  nif              String?
+  criadoEm         DateTime         @default(now())
+  fracoes          Fracao[]
+  pagamentos       Pagamento[]      @relation("PagamentoProprietario")
+  contasCorrentes  ContaCorrente[]
+}
+
+model Inquilino {
+  id          Int       @id @default(autoincrement())
+  nome        String
+  email       String?
+  telefone    String?
+  nif         String?
+  criadoEm    DateTime  @default(now())
+  fracao      Fracao?
+  pagamentos  Pagamento[] @relation("PagamentoInquilino")
+}
+
+model Pagamento {
+  id            Int        @id @default(autoincrement())
+  valor         Float
+  data          DateTime   @default(now())
+  vencimento    DateTime?
+  estado        EstadoPagamento
+  descricao     String?
+  userId        Int
+  fracaoId      Int?
+  fracao        Fracao?    @relation(fields: [fracaoId], references: [id])
+  user          User       @relation(fields: [userId], references: [id])
+  recibo        Recibo?
+  historico     HistoricoPagamento[]
+  ativo         Boolean    @default(true)
+
+  proprietarioId Int?
+  proprietario   Proprietario? @relation(fields: [proprietarioId], references: [id], name: "PagamentoProprietario")
+  inquilinoId    Int?
+  inquilino      Inquilino?    @relation(fields: [inquilinoId], references: [id], name: "PagamentoInquilino")
+}
+
+model HistoricoPagamento {
+  id          Int        @id @default(autoincrement())
+  pagamentoId Int
+  acao        String
+  detalhe     String
+  userId      Int
+  data        DateTime   @default(now())
+
+  pagamento   Pagamento  @relation(fields: [pagamentoId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
+}
+
+model Recibo {
+  id          Int       @id @default(autoincrement())
+  numero      String
+  data        DateTime  @default(now())
+  pagamentoId Int       @unique
+  pagamento   Pagamento @relation(fields: [pagamentoId], references: [id])
+}
+
+model ContaCorrente {
+  id             Int             @id @default(autoincrement())
+  proprietario   Proprietario    @relation(fields: [proprietarioId], references: [id])
+  proprietarioId Int
+  saldoInicial   Float           @default(0.0)
+  saldoAtual     Float           @default(0.0)
+  movimentos     Movimento[]
+  criadoEm       DateTime        @default(now())
+  atualizadoEm   DateTime        @updatedAt
+}
+
+model Movimento {
+  id              Int           @id @default(autoincrement())
+  contaCorrente   ContaCorrente @relation(fields: [contaCorrenteId], references: [id])
+  contaCorrenteId Int
+  tipo            String
+  valor           Float
+  descricao       String?
+  data            DateTime      @default(now())
+}
+
+model ServicoExtra {
+  id        Int               @id @default(autoincrement())
+  nome      String
+  descricao String?
+  valor     Float
+  criadoEm  DateTime          @default(now())
+  agendados ServicoAgendado[]
+}
+
+model ServicoAgendado {
+  id          Int          @id @default(autoincrement())
+  data        DateTime
+  observacoes String?
+  userId      Int
+  servicoId   Int
+  edificioId  Int?
+  edificio    Edificio?    @relation(fields: [edificioId], references: [id])
+  servico     ServicoExtra @relation(fields: [servicoId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+}
+
+model Evento {
+  id           Int        @id @default(autoincrement())
+  titulo       String
+  descricao    String?
+  data         DateTime
+  condominioId Int
+  criadoPor    Int
+  condominio   Condominio @relation(fields: [condominioId], references: [id])
+  user         User       @relation(fields: [criadoPor], references: [id])
+}
+
+enum EstadoFracao {
+  VAGO
+  OCUPADO
+}
+
+enum EstadoPagamento {
+  PAGO
+  PENDENTE
+}
