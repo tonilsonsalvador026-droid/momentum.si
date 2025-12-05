@@ -44,6 +44,17 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // -----------------------------------------------
+// Rotas básicas para Render / Saúde do Servidor
+// -----------------------------------------------
+app.get("/", (req, res) => {
+  res.send("API do Momentum.SI está online 🚀");
+});
+
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// -----------------------------------------------
 // Helpers comuns
 // -----------------------------------------------
 const parseIntOrNull = (v) => {
@@ -2493,4 +2504,5 @@ const PORT = process.env.PORT || 5000; // 👈 esta linha tem de vir antes do ap
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Servidor a correr na porta ${PORT} (acessível pela rede local)`);
+
 });
