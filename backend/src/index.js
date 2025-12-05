@@ -47,7 +47,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Rotas básicas para Render / Saúde do Servidor
 // -----------------------------------------------
 app.get("/", (req, res) => {
-  res.send("API do Momentum.SI está online 🚀");
+  res.send("API do Momentum.SI está online");
 });
 
 app.get("/healthz", (req, res) => {
@@ -2506,3 +2506,4 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Servidor a correr na porta ${PORT} (acessível pela rede local)`);
 
 });
+
