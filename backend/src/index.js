@@ -36,7 +36,7 @@ const upload = multer({ storage });
 // -----------------------------------------------
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://192.168.1.238:3000"],
+    origin: ["https://momentum-si-frontend.onrender.com"],
     credentials: true,
   })
 );
@@ -2506,4 +2506,5 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Servidor a correr na porta ${PORT} (acessível pela rede local)`);
 
 });
+
 
