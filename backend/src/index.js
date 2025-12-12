@@ -36,7 +36,11 @@ const upload = multer({ storage });
 // -----------------------------------------------
 app.use(
   cors({
-    origin: ["https://momentum-si-frontend.onrender.com"],
+    origin: [
+      "http://localhost:3000",               // desenvolvimento local
+      "http://192.168.1.238:3000",           // desenvolvimento rede local
+      "https://momentum-si-frontend.onrender.com" // frontend em produção
+    ],
     credentials: true,
   })
 );
