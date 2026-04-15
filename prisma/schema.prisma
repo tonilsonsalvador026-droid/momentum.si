@@ -85,7 +85,7 @@ model Fracao {
   inquilinoId    Int?          @unique
 
   edificio       Edificio      @relation(fields: [edificioId], references: [id])
-  inquilino      Inquilino?    @relation(fields: [inquilinoId], references: [id])
+  inquilino      Inquilino?    @relation("FracaoInquilino", fields: [inquilinoId], references: [id])
   proprietario   Proprietario? @relation(fields: [proprietarioId], references: [id])
   pagamentos     Pagamento[]
 }
@@ -109,7 +109,9 @@ model Inquilino {
   telefone    String?
   nif         String?
   criadoEm    DateTime  @default(now())
-  fracao      Fracao?
+
+  fracao      Fracao?   @relation("FracaoInquilino")
+
   pagamentos  Pagamento[] @relation("PagamentoInquilino")
 }
 

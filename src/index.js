@@ -704,16 +704,44 @@ app.post("/mensagens", authMiddleware("admin"), async (req, res) => {
 });
 
 // -----------------------------------------------
-// ROTAS DE FRAÇÕES (versão final - produção)
+// ROTAS DE FRAÇÕES (PRODUÇÃO)
 // -----------------------------------------------
+
+// ✅ Listar frações vagas (SEM inquilino)
+app.get("/fracoes/vagas", async (req, res) => {
+  try {
+    const fracoes = await prisma.fracao.findMany({
+      where: {
+        inquilinoId: null, // 🔥 fonte de verdade
+      },
+      include: {
+        edificio: true,
+        proprietario: true,
+      },
+      orderBy: {
+        numero: "asc",
+      },
+    });
+
+    res.json(fracoes);
+  } catch (err) {
+    console.error("❌ Erro em GET /fracoes/vagas:", err);
+    res.status(500).json({ error: "Erro ao listar frações vagas." });
+  }
+});
 
 // ✅ Listar todas as frações
 app.get("/fracoes", async (req, res) => {
   try {
     const fracoes = await prisma.fracao.findMany({
-      include: { edificio: true, proprietario: true, inquilino: true },
+      include: {
+        edificio: true,
+        proprietario: true,
+        inquilino: true,
+      },
       orderBy: { numero: "asc" },
     });
+
     res.json(fracoes);
   } catch (err) {
     console.error("❌ Erro em GET /fracoes:", err);
@@ -721,10 +749,10 @@ app.get("/fracoes", async (req, res) => {
   }
 });
 
-// ✅ Buscar fração pelo ID
+// ✅ Buscar fração por ID
 app.get("/fracoes/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido." });
 
     const fracao = await prisma.fracao.findUnique({
@@ -732,17 +760,11 @@ app.get("/fracoes/:id", async (req, res) => {
       include: { edificio: true, proprietario: true, inquilino: true },
     });
 
-    if (!fracao) return res.status(404).json({ error: "Fração não encontrada." });
+    if (!fracao) {
+      return res.status(404).json({ error: "Fração não encontrada." });
+    }
 
-    res.json({
-      id: fracao.id,
-      numero: fracao.numero,
-      tipo: fracao.tipo,
-      estado: fracao.estado,
-      edificioId: fracao.edificio?.id || null,
-      proprietarioId: fracao.proprietario?.id || null,
-      inquilinoId: fracao.inquilino?.id || null,
-    });
+    res.json(fracao);
   } catch (err) {
     console.error("❌ Erro em GET /fracoes/:id:", err);
     res.status(500).json({ error: "Erro ao buscar fração." });
@@ -752,35 +774,69 @@ app.get("/fracoes/:id", async (req, res) => {
 // ✅ Criar fração
 app.post("/fracoes", async (req, res) => {
   try {
-    let { numero, estado, tipo, edificioId, proprietarioId, inquilinoId } = req.body;
+    let { numero, tipo, edificioId, proprietarioId, inquilinoId } = req.body;
 
-    edificioId = edificioId ? parseInt(edificioId) : null;
-    proprietarioId = proprietarioId ? parseInt(proprietarioId) : null;
-    inquilinoId = inquilinoId ? parseInt(inquilinoId) : null;
+    edificioId = edificioId ? Number(edificioId) : null;
+    proprietarioId = proprietarioId ? Number(proprietarioId) : null;
+    inquilinoId = inquilinoId ? Number(inquilinoId) : null;
 
-    const edificio = await prisma.edificio.findUnique({ where: { id: edificioId } });
-    if (!edificio) return res.status(400).json({ error: "Edifício não encontrado." });
-
-    if (proprietarioId) {
-      const proprietario = await prisma.proprietario.findUnique({ where: { id: proprietarioId } });
-      if (!proprietario) return res.status(400).json({ error: "Proprietário inválido." });
+    // validar edifício
+    const edificio = await prisma.edificio.findUnique({
+      where: { id: edificioId },
+    });
+    if (!edificio) {
+      return res.status(400).json({ error: "Edifício não encontrado." });
     }
 
-    if (inquilinoId) {
-      const inquilino = await prisma.inquilino.findUnique({ where: { id: inquilinoId } });
-      if (!inquilino) return res.status(400).json({ error: "Inquilino inválido." });
+    // validar proprietário
+    if (proprietarioId) {
+      const proprietario = await prisma.proprietario.findUnique({
+        where: { id: proprietarioId },
+      });
+      if (!proprietario) {
+        return res.status(400).json({ error: "Proprietário inválido." });
+      }
+    }
 
-      const jaAssociado = await prisma.fracao.findFirst({ where: { inquilinoId } });
-      if (jaAssociado) return res.status(400).json({ error: "Este inquilino já está associado a outra fração." });
+    let estado = "VAGO";
+
+    // validar inquilino
+    if (inquilinoId) {
+      const inquilino = await prisma.inquilino.findUnique({
+        where: { id: inquilinoId },
+      });
+
+      if (!inquilino) {
+        return res.status(400).json({ error: "Inquilino inválido." });
+      }
+
+      const jaAssociado = await prisma.fracao.findFirst({
+        where: { inquilinoId },
+      });
+
+      if (jaAssociado) {
+        return res.status(400).json({
+          error: "Este inquilino já está associado a outra fração.",
+        });
+      }
 
       estado = "OCUPADO";
-    } else {
-      estado = "VAGO";
     }
 
     const fracao = await prisma.fracao.create({
-      data: { numero, tipo, estado, edificioId, proprietarioId, inquilinoId },
-      include: { edificio: true, proprietario: true, inquilino: true },
+      data: {
+        numero,
+        tipo,
+        estado,
+        edificioId,
+        proprietarioId,
+        inquilinoId,
+      },
+      include: {
+        edificio: true,
+        proprietario: true,
+        inquilino: true,
+      },
     });
 
     res.status(201).json(fracao);
@@ -793,40 +849,60 @@ app.post("/fracoes", async (req, res) => {
 // ✅ Atualizar fração
 app.put("/fracoes/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido." });
 
-    let { numero, tipo, estado, edificioId, proprietarioId, inquilinoId } = req.body;
+    let { numero, tipo, edificioId, proprietarioId, inquilinoId } = req.body;
 
-    edificioId = edificioId ? parseInt(edificioId) : null;
-    proprietarioId = proprietarioId ? parseInt(proprietarioId) : null;
-    inquilinoId = inquilinoId ? parseInt(inquilinoId) : null;
+    edificioId = edificioId ? Number(edificioId) : null;
+    proprietarioId = proprietarioId ? Number(proprietarioId) : null;
+    inquilinoId = inquilinoId ? Number(inquilinoId) : null;
 
     const fracaoAtual = await prisma.fracao.findUnique({
       where: { id },
-      include: { inquilino: true },
     });
-    if (!fracaoAtual) return res.status(404).json({ error: "Fração não encontrada." });
 
-    if (!inquilinoId) {
-      estado = "VAGO";
-    } else {
-      const inquilino = await prisma.inquilino.findUnique({ where: { id: inquilinoId } });
-      if (!inquilino) return res.status(400).json({ error: "Inquilino inválido." });
+    if (!fracaoAtual) {
+      return res.status(404).json({ error: "Fração não encontrada." });
+    }
 
-      const jaAssociado = await prisma.fracao.findFirst({ where: { inquilinoId, NOT: { id } } });
-      if (jaAssociado) return res.status(400).json({ error: "Este inquilino já está associado a outra fração." });
+    let estado = "VAGO";
+
+    if (inquilinoId) {
+      const jaAssociado = await prisma.fracao.findFirst({
+        where: {
+          inquilinoId,
+          NOT: { id },
+        },
+      });
+
+      if (jaAssociado) {
+        return res.status(400).json({
+          error: "Este inquilino já está associado a outra fração.",
+        });
+      }
 
       estado = "OCUPADO";
     }
 
-    const fracaoAtualizada = await prisma.fracao.update({
+    const fracao = await prisma.fracao.update({
       where: { id },
-      data: { numero, tipo, estado, edificioId, proprietarioId, inquilinoId },
-      include: { edificio: true, proprietario: true, inquilino: true },
+      data: {
+        numero,
+        tipo,
+        estado,
+        edificioId,
+        proprietarioId,
+        inquilinoId,
+      },
+      include: {
+        edificio: true,
+        proprietario: true,
+        inquilino: true,
+      },
     });
 
-    res.json(fracaoAtualizada);
+    res.json(fracao);
   } catch (err) {
     console.error("❌ Erro em PUT /fracoes/:id:", err);
     res.status(500).json({ error: "Erro ao atualizar fração." });
@@ -836,20 +912,21 @@ app.put("/fracoes/:id", async (req, res) => {
 // ✅ Excluir fração
 app.delete("/fracoes/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido." });
 
     const fracao = await prisma.fracao.findUnique({
       where: { id },
-      include: { inquilino: true },
     });
-    if (!fracao) return res.status(404).json({ error: "Fração não encontrada." });
 
-    if (fracao.inquilinoId) {
-      await prisma.fracao.update({ where: { id }, data: { inquilinoId: null } });
+    if (!fracao) {
+      return res.status(404).json({ error: "Fração não encontrada." });
     }
 
-    await prisma.fracao.delete({ where: { id } });
+    await prisma.fracao.delete({
+      where: { id },
+    });
+
     res.json({ message: "Fração eliminada com sucesso." });
   } catch (err) {
     console.error("❌ Erro em DELETE /fracoes/:id:", err);
@@ -857,30 +934,32 @@ app.delete("/fracoes/:id", async (req, res) => {
   }
 });
 
+
 // -----------------------------------------------
-// ROTAS DE INQUILINOS
+// ROTAS DE INQUILINOS (PRODUÇÃO)
 // -----------------------------------------------
 
-// ✅ Listar todos os inquilinos (com fração, edifício e nif)
+// ✅ Listar inquilinos
 app.get("/inquilinos", async (req, res) => {
   try {
     const inquilinos = await prisma.inquilino.findMany({
       include: {
         fracao: {
           include: {
-            edificio: true, // 🔥 pega também o edifício
+            edificio: true,
           },
         },
       },
     });
+
     res.json(inquilinos);
   } catch (err) {
-    console.error("Erro em GET /inquilinos:", err);
+    console.error("❌ Erro em GET /inquilinos:", err);
     res.status(500).json({ error: "Erro ao listar inquilinos." });
   }
 });
 
-// ✅ Criar novo inquilino e atualizar estado da fração
+// ✅ Criar inquilino
 app.post("/inquilinos", async (req, res) => {
   try {
     const { nome, telefone, email, nif, fracaoId } = req.body;
@@ -891,19 +970,22 @@ app.post("/inquilinos", async (req, res) => {
         telefone,
         email,
         nif,
-        fracao: { connect: { id: Number(fracaoId) } }, // ✅ vincular fração
       },
     });
 
-    // 🔥 Atualiza o estado da fração para "OCUPADO"
-    await prisma.fracao.update({
-      where: { id: Number(fracaoId) },
-      data: { estado: "OCUPADO" },
-    });
+    if (fracaoId) {
+      await prisma.fracao.update({
+        where: { id: Number(fracaoId) },
+        data: {
+          inquilinoId: inquilino.id,
+          estado: "OCUPADO",
+        },
+      });
+    }
 
-    res.json(inquilino);
+    res.status(201).json(inquilino);
   } catch (err) {
-    console.error("Erro em POST /inquilinos:", err);
+    console.error("❌ Erro em POST /inquilinos:", err);
     res.status(500).json({ error: "Erro ao criar inquilino." });
   }
 });
@@ -911,79 +993,91 @@ app.post("/inquilinos", async (req, res) => {
 // ✅ Atualizar inquilino
 app.put("/inquilinos/:id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const { nome, telefone, email, nif, fracaoId } = req.body;
 
+    const inquilinoAtual = await prisma.inquilino.findUnique({
+      where: { id },
+      include: { fracao: true },
+    });
+
+    if (!inquilinoAtual) {
+      return res.status(404).json({ error: "Inquilino não encontrado." });
+    }
+
+    // libertar fração antiga
+    if (inquilinoAtual.fracao) {
+      await prisma.fracao.update({
+        where: { id: inquilinoAtual.fracao.id },
+        data: {
+          inquilinoId: null,
+          estado: "VAGO",
+        },
+      });
+    }
+
     const inquilino = await prisma.inquilino.update({
-      where: { id: Number(id) },
+      where: { id },
       data: {
         nome,
         telefone,
         email,
         nif,
-        fracao: { connect: { id: Number(fracaoId) } }, // ✅ atualizar vínculo
       },
     });
 
-    // 🔥 Garantir que a fração vinculada esteja marcada como "OCUPADO"
-    await prisma.fracao.update({
-      where: { id: Number(fracaoId) },
-      data: { estado: "OCUPADO" },
-    });
+    // nova associação
+    if (fracaoId) {
+      await prisma.fracao.update({
+        where: { id: Number(fracaoId) },
+        data: {
+          inquilinoId: inquilino.id,
+          estado: "OCUPADO",
+        },
+      });
+    }
 
     res.json(inquilino);
   } catch (err) {
-    console.error("Erro em PUT /inquilinos/:id:", err);
+    console.error("❌ Erro em PUT /inquilinos/:id:", err);
     res.status(500).json({ error: "Erro ao atualizar inquilino." });
   }
 });
 
-// ✅ Excluir inquilino e liberar fração
+// ✅ Excluir inquilino
 app.delete("/inquilinos/:id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
 
-    // Primeiro, busca o inquilino para saber qual fração ele ocupa
     const inquilino = await prisma.inquilino.findUnique({
-      where: { id: Number(id) },
+      where: { id },
     });
 
     if (!inquilino) {
       return res.status(404).json({ error: "Inquilino não encontrado." });
     }
 
-    // Remove o inquilino
-    await prisma.inquilino.delete({
-      where: { id: Number(id) },
-    });
+    // libertar fração
+    if (inquilino.fracaoId) {
+      await prisma.fracao.update({
+        where: { id: inquilino.fracaoId },
+        data: {
+          inquilinoId: null,
+          estado: "VAGO",
+        },
+      });
+    }
 
-    // 🔥 Atualiza a fração para "VAGO"
-    await prisma.fracao.update({
-      where: { id: inquilino.fracaoId },
-      data: { estado: "VAGO" },
+    await prisma.inquilino.delete({
+      where: { id },
     });
 
     res.json({ message: "Inquilino excluído com sucesso." });
   } catch (err) {
-    console.error("Erro em DELETE /inquilinos/:id:", err);
+    console.error("❌ Erro em DELETE /inquilinos/:id:", err);
     res.status(500).json({ error: "Erro ao excluir inquilino." });
   }
 });
-
-// ✅ Buscar frações vagas (sem inquilino)
-app.get("/fracoes/vagas", async (req, res) => {
-  try {
-    const fracoes = await prisma.fracao.findMany({
-      where: { estado: "VAGO" }, // 🔥 agora garantido pelo campo estado
-      include: { edificio: true },
-    });
-    res.json(fracoes);
-  } catch (err) {
-    console.error("Erro em GET /fracoes/vagas:", err);
-    res.status(500).json({ error: "Erro ao listar frações vagas." });
-  }
-});
-
 // -----------------------------------------------
 // ROTAS DE PROPRIETÁRIOS
 // -----------------------------------------------
