@@ -2083,12 +2083,61 @@ app.get("/contas-correntes/:id/movimentos", async (req, res) => {
   try {
     const { id } = req.params;
 
+    const conta = await prisma.contaCorrente.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!conta) {
+      return res.status(404).json({ error: "Conta não encontrada" });
+    }
+
     const movimentos = await prisma.movimento.findMany({
       where: { contaCorrenteId: parseInt(id) },
       orderBy: { data: "asc" },
     });
 
-    res.json(movimentos);
+   // 🔥 cálculo de saldo acumulado
+let saldo = 0;
+
+const movimentosComSaldo = movimentos.map((mov) => {
+  const valor = mov.valor || 0;
+
+  if (mov.tipo.toLowerCase() === "debito") {
+    saldo -= valor;
+  } else if (mov.tipo.toLowerCase() === "credito") {
+    saldo += valor;
+  }
+
+  return {
+    ...mov,
+    saldoAcumulado: saldo,
+  };
+});
+    // 🔥 totais
+    const totalDebito = movimentos
+      .filter(m => m.tipo.toLowerCase() === "debito")
+      .reduce((acc, m) => acc + (m.valor || 0), 0);
+
+    const totalCredito = movimentos
+      .filter(m => m.tipo.toLowerCase() === "credito")
+      .reduce((acc, m) => acc + (m.valor || 0), 0);
+
+    const saldoFinal = saldo;
+
+    res.json({
+      conta: {
+        id: conta.id,
+        saldoInicial: conta.saldoInicial,
+        saldoAtual: conta.saldoAtual,
+      },
+      movimentos: movimentosComSaldo,
+      totais: {
+        totalDebito,
+        totalCredito,
+        saldoFinal,
+      },
+    });
+
   } catch (error) {
     console.error("Erro ao buscar movimentos:", error);
     res.status(500).json({ error: "Erro ao buscar movimentos" });
