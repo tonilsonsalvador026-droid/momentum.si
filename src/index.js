@@ -2144,6 +2144,65 @@ const movimentosComSaldo = movimentos.map((mov) => {
   }
 });
 
+// Eliminar movimento
+app.delete("/movimentos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const movimento = await prisma.movimento.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!movimento) {
+      return res.status(404).json({
+        error: "Movimento não encontrado",
+      });
+    }
+
+    const contaId = movimento.contaCorrenteId;
+
+    // 🔥 elimina movimento
+    await prisma.movimento.delete({
+      where: { id: parseInt(id) },
+    });
+
+    // 🔥 busca movimentos restantes
+    const movimentos = await prisma.movimento.findMany({
+      where: { contaCorrenteId: contaId },
+    });
+
+    // 🔥 recalcula saldo
+    let saldo = 0;
+
+    movimentos.forEach((mov) => {
+      if (mov.tipo.toLowerCase() === "credito") {
+        saldo += mov.valor || 0;
+      } else if (mov.tipo.toLowerCase() === "debito") {
+        saldo -= mov.valor || 0;
+      }
+    });
+
+    // 🔥 atualiza conta
+    await prisma.contaCorrente.update({
+      where: { id: contaId },
+      data: {
+        saldoAtual: saldo,
+      },
+    });
+
+    return res.json({
+      message: "Movimento eliminado com sucesso",
+    });
+
+  } catch (error) {
+    console.error("Erro ao eliminar movimento:", error);
+
+    return res.status(500).json({
+      error: "Erro ao eliminar movimento",
+    });
+  }
+});
+
 // -----------------------------------------------
 // ROLES (Papéis de Utilizador)
 // -----------------------------------------------
