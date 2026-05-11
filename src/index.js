@@ -2040,51 +2040,68 @@ app.post("/contas-correntes/:id/movimentos", async (req, res) => {
     const { tipo, valor, descricao, data } = req.body;
 
     if (!tipo || !valor) {
-      return res.status(400).json({ error: "Tipo e valor são obrigatórios" });
+      return res.status(400).json({
+        error: "Tipo e valor são obrigatórios",
+      });
     }
 
-    // Cria o movimento
+    // 🔥 busca conta
+    const conta = await prisma.contaCorrente.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!conta) {
+      return res.status(404).json({
+        error: "Conta não encontrada",
+      });
+    }
+
+    let novoSaldo = conta.saldoAtual || 0;
+    const valorNumerico = parseFloat(valor);
+
+    // 🔥 valida saldo
+    if (tipo.toLowerCase() === "credito") {
+      novoSaldo += valorNumerico;
+
+    } else if (tipo.toLowerCase() === "debito") {
+
+      // impedir saldo negativo
+      if (valorNumerico > conta.saldoAtual) {
+        return res.status(400).json({
+          error: "Saldo insuficiente para realizar este débito",
+        });
+      }
+
+      novoSaldo -= valorNumerico;
+    }
+
+    // 🔥 cria movimento só depois da validação
     const movimento = await prisma.movimento.create({
       data: {
         contaCorrenteId: parseInt(id),
         tipo,
-        valor: parseFloat(valor),
+        valor: valorNumerico,
         descricao,
         data: data ? new Date(data) : new Date(),
       },
     });
 
-    // Atualiza o saldo da conta automaticamente
-    const conta = await prisma.contaCorrente.findUnique({
-      where: { id: parseInt(id) },
-    });
-
-let novoSaldo = conta.saldoAtual;
-const valorNumerico = parseFloat(valor);
-
-if (tipo.toLowerCase() === "credito") {
-  novoSaldo += valorNumerico;
-} else if (tipo.toLowerCase() === "debito") {
-
-  // 🔥 impedir saldo negativo
-  if (valorNumerico > conta.saldoAtual) {
-    return res.status(400).json({
-      error: "Saldo insuficiente para realizar este débito",
-    });
-  }
-
-  novoSaldo -= valorNumerico;
-}
-
+    // 🔥 atualiza saldo
     await prisma.contaCorrente.update({
       where: { id: parseInt(id) },
-      data: { saldoAtual: novoSaldo },
+      data: {
+        saldoAtual: novoSaldo,
+      },
     });
 
-    res.json(movimento);
+    return res.json(movimento);
+
   } catch (error) {
     console.error("Erro ao registrar movimento:", error);
-    res.status(500).json({ error: "Erro ao registrar movimento" });
+
+    return res.status(500).json({
+      error: "Erro ao registrar movimento",
+    });
   }
 });
 
