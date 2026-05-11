@@ -2059,12 +2059,22 @@ app.post("/contas-correntes/:id/movimentos", async (req, res) => {
       where: { id: parseInt(id) },
     });
 
-    let novoSaldo = conta.saldoAtual;
-    if (tipo === "credito") {
-      novoSaldo += parseFloat(valor);
-    } else if (tipo === "debito") {
-      novoSaldo -= parseFloat(valor);
-    }
+let novoSaldo = conta.saldoAtual;
+const valorNumerico = parseFloat(valor);
+
+if (tipo.toLowerCase() === "credito") {
+  novoSaldo += valorNumerico;
+} else if (tipo.toLowerCase() === "debito") {
+
+  // 🔥 impedir saldo negativo
+  if (valorNumerico > conta.saldoAtual) {
+    return res.status(400).json({
+      error: "Saldo insuficiente para realizar este débito",
+    });
+  }
+
+  novoSaldo -= valorNumerico;
+}
 
     await prisma.contaCorrente.update({
       where: { id: parseInt(id) },
