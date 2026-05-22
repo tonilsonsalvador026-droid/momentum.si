@@ -2504,10 +2504,16 @@ app.get("/servicos-agendados", async (req, res) => {
 
 app.post("/servicos-agendados", async (req, res) => {
   try {
-    const { data, servicoExtraId } = req.body;
+    const { data, servicoExtraId, observacoes } = req.body;
+
     const agendado = await prisma.servicoAgendado.create({
-      data: { data, servicoExtraId },
+      data: {
+        data,
+        observacoes,
+        servicoExtraId: Number(servicoExtraId),
+      },
     });
+
     res.status(201).json(agendado);
   } catch (err) {
     console.error("Erro em POST /servicos-agendados:", err);
@@ -2518,11 +2524,17 @@ app.post("/servicos-agendados", async (req, res) => {
 app.put("/servicos-agendados/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, servicoExtraId } = req.body;
+    const { data, servicoExtraId, observacoes } = req.body;
+
     const agendado = await prisma.servicoAgendado.update({
       where: { id: Number(id) },
-      data: { data, servicoExtraId },
+      data: {
+        data,
+        observacoes,
+        servicoExtraId: Number(servicoExtraId),
+      },
     });
+
     res.json(agendado);
   } catch (err) {
     console.error("Erro em PUT /servicos-agendados/:id:", err);
