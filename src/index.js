@@ -2504,19 +2504,20 @@ app.get("/servicos-agendados", async (req, res) => {
 
 app.post("/servicos-agendados", async (req, res) => {
   try {
-    const { data, servicoExtraId, observacoes } = req.body;
+    const { data, servicoId, observacoes, userId } = req.body;
 
     const agendado = await prisma.servicoAgendado.create({
       data: {
-        data,
+        data: new Date(data),
         observacoes,
-        servicoExtraId: Number(servicoExtraId),
+        servicoId: Number(servicoId),
+        userId: Number(userId),
       },
     });
 
     res.status(201).json(agendado);
   } catch (err) {
-    console.error("Erro em POST /servicos-agendados:", err);
+    console.error(err);
     res.status(500).json({ error: "Erro ao criar serviço agendado." });
   }
 });
@@ -2524,20 +2525,21 @@ app.post("/servicos-agendados", async (req, res) => {
 app.put("/servicos-agendados/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, servicoExtraId, observacoes } = req.body;
+    const { data, servicoId, observacoes, userId } = req.body;
 
     const agendado = await prisma.servicoAgendado.update({
       where: { id: Number(id) },
       data: {
-        data,
+        data: new Date(data),
         observacoes,
-        servicoExtraId: Number(servicoExtraId),
+        servicoId: Number(servicoId),
+        userId: Number(userId),
       },
     });
 
     res.json(agendado);
   } catch (err) {
-    console.error("Erro em PUT /servicos-agendados/:id:", err);
+    console.error(err);
     res.status(500).json({ error: "Erro ao atualizar serviço agendado." });
   }
 });
