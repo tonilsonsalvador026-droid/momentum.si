@@ -2493,7 +2493,7 @@ app.delete("/servicos-extras/:id", async (req, res) => {
 app.get("/servicos-agendados", async (req, res) => {
   try {
     const agendados = await prisma.servicoAgendado.findMany({
-      include: { servicoExtra: true },
+      include: { servico: true },
     });
     res.json(agendados);
   } catch (err) {
