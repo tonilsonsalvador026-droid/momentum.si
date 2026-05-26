@@ -2388,50 +2388,122 @@ app.put("/users/:id/role", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 app.get("/eventos", async (req, res) => {
   try {
-    const eventos = await prisma.evento.findMany();
+    const eventos = await prisma.evento.findMany({
+      include: {
+        condominio: true,
+        user: true,
+      },
+      orderBy: {
+        data: "desc",
+      },
+    });
+
     res.json(eventos);
+
   } catch (err) {
+
     console.error("Erro em GET /eventos:", err);
-    res.status(500).json({ error: "Erro ao listar eventos." });
+
+    res.status(500).json({
+      error: "Erro ao listar eventos.",
+    });
   }
 });
 
 app.post("/eventos", async (req, res) => {
   try {
-    const { titulo, descricao, data } = req.body;
+
+    const {
+      titulo,
+      descricao,
+      data,
+      condominioId,
+      criadoPor,
+    } = req.body;
+
     const evento = await prisma.evento.create({
-      data: { titulo, descricao, data },
+      data: {
+        titulo,
+        descricao,
+        data: new Date(data),
+        condominioId: Number(condominioId),
+        criadoPor: Number(criadoPor),
+      },
     });
+
     res.status(201).json(evento);
+
   } catch (err) {
+
     console.error("Erro em POST /eventos:", err);
-    res.status(500).json({ error: "Erro ao criar evento." });
+
+    res.status(500).json({
+      error: "Erro ao criar evento.",
+    });
   }
 });
 
 app.put("/eventos/:id", async (req, res) => {
   try {
+
     const { id } = req.params;
-    const { titulo, descricao, data } = req.body;
+
+    const {
+      titulo,
+      descricao,
+      data,
+      condominioId,
+      criadoPor,
+    } = req.body;
+
     const evento = await prisma.evento.update({
-      where: { id: Number(id) },
-      data: { titulo, descricao, data },
+      where: {
+        id: Number(id),
+      },
+
+      data: {
+        titulo,
+        descricao,
+        data: new Date(data),
+        condominioId: Number(condominioId),
+        criadoPor: Number(criadoPor),
+      },
     });
+
     res.json(evento);
+
   } catch (err) {
+
     console.error("Erro em PUT /eventos/:id:", err);
-    res.status(500).json({ error: "Erro ao atualizar evento." });
+
+    res.status(500).json({
+      error: "Erro ao atualizar evento.",
+    });
   }
 });
 
 app.delete("/eventos/:id", async (req, res) => {
   try {
+
     const { id } = req.params;
-    await prisma.evento.delete({ where: { id: Number(id) } });
-    res.json({ message: "Evento eliminado com sucesso." });
+
+    await prisma.evento.delete({
+      where: {
+        id: Number(id),
+      },
+    });
+
+    res.json({
+      message: "Evento eliminado com sucesso.",
+    });
+
   } catch (err) {
+
     console.error("Erro em DELETE /eventos/:id:", err);
-    res.status(500).json({ error: "Erro ao eliminar evento." });
+
+    res.status(500).json({
+      error: "Erro ao eliminar evento.",
+    });
   }
 });
 
