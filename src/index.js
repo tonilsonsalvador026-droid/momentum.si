@@ -2386,23 +2386,32 @@ app.put("/users/:id/role", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 // ROTAS DE EVENTOS
 // -----------------------------------------------
+
 app.get("/eventos", async (req, res) => {
+
   try {
+
     const eventos = await prisma.evento.findMany({
+
       include: {
         condominio: true,
         user: true,
       },
+
       orderBy: {
         data: "desc",
       },
+
     });
 
     res.json(eventos);
 
   } catch (err) {
 
-    console.error("Erro em GET /eventos:", err);
+    console.error(
+      "Erro em GET /eventos:",
+      err
+    );
 
     res.status(500).json({
       error: "Erro ao listar eventos.",
@@ -2410,7 +2419,11 @@ app.get("/eventos", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// CRIAR EVENTO
+// -----------------------------------------------
 app.post("/eventos", async (req, res) => {
+
   try {
 
     const {
@@ -2418,24 +2431,32 @@ app.post("/eventos", async (req, res) => {
       descricao,
       data,
       condominioId,
-      criadoPor,
     } = req.body;
 
+    // 🔥 TEMPORÁRIO
+    // depois virá do login/token
+    const criadoPor = 1;
+
     const evento = await prisma.evento.create({
+
       data: {
         titulo,
         descricao,
         data: new Date(data),
         condominioId: Number(condominioId),
-        criadoPor: Number(criadoPor),
+        criadoPor,
       },
+
     });
 
     res.status(201).json(evento);
 
   } catch (err) {
 
-    console.error("Erro em POST /eventos:", err);
+    console.error(
+      "Erro em POST /eventos:",
+      err
+    );
 
     res.status(500).json({
       error: "Erro ao criar evento.",
@@ -2443,7 +2464,11 @@ app.post("/eventos", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// ATUALIZAR EVENTO
+// -----------------------------------------------
 app.put("/eventos/:id", async (req, res) => {
+
   try {
 
     const { id } = req.params;
@@ -2453,10 +2478,23 @@ app.put("/eventos/:id", async (req, res) => {
       descricao,
       data,
       condominioId,
-      criadoPor,
     } = req.body;
 
+    const eventoAtual = await prisma.evento.findUnique({
+      where: {
+        id: Number(id),
+      },
+    });
+
+    if (!eventoAtual) {
+
+      return res.status(404).json({
+        error: "Evento não encontrado.",
+      });
+    }
+
     const evento = await prisma.evento.update({
+
       where: {
         id: Number(id),
       },
@@ -2466,15 +2504,21 @@ app.put("/eventos/:id", async (req, res) => {
         descricao,
         data: new Date(data),
         condominioId: Number(condominioId),
-        criadoPor: Number(criadoPor),
+
+        // mantém o utilizador original
+        criadoPor: eventoAtual.criadoPor,
       },
+
     });
 
     res.json(evento);
 
   } catch (err) {
 
-    console.error("Erro em PUT /eventos/:id:", err);
+    console.error(
+      "Erro em PUT /eventos/:id:",
+      err
+    );
 
     res.status(500).json({
       error: "Erro ao atualizar evento.",
@@ -2482,24 +2526,34 @@ app.put("/eventos/:id", async (req, res) => {
   }
 });
 
+// -----------------------------------------------
+// ELIMINAR EVENTO
+// -----------------------------------------------
 app.delete("/eventos/:id", async (req, res) => {
+
   try {
 
     const { id } = req.params;
 
     await prisma.evento.delete({
+
       where: {
         id: Number(id),
       },
+
     });
 
     res.json({
-      message: "Evento eliminado com sucesso.",
+      message:
+        "Evento eliminado com sucesso.",
     });
 
   } catch (err) {
 
-    console.error("Erro em DELETE /eventos/:id:", err);
+    console.error(
+      "Erro em DELETE /eventos/:id:",
+      err
+    );
 
     res.status(500).json({
       error: "Erro ao eliminar evento.",
