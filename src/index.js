@@ -121,35 +121,78 @@ app.post("/setup/admin", async (req, res) => {
 // -----------------------------------------------
 app.post("/login", async (req, res) => {
   const { email, password } = req.body || {};
+
   try {
     if (!email || !password) {
-      return res.status(400).json({ error: "Informe email e password." });
+      return res.status(400).json({
+        error: "Informe email e password.",
+      });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        roleRel: {
+          include: {
+            permissoes: {
+              include: {
+                permissao: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
     if (!user) {
-      return res.status(401).json({ error: "Credenciais inválidas." });
+      return res.status(401).json({
+        error: "Credenciais inválidas.",
+      });
     }
 
     const ok = await bcrypt.compare(password, user.password);
+
     if (!ok) {
-      return res.status(401).json({ error: "Credenciais inválidas." });
+      return res.status(401).json({
+        error: "Credenciais inválidas.",
+      });
+    }
+
+    const permissoes = [];
+
+    if (user.roleRel?.permissoes) {
+      user.roleRel.permissoes.forEach((rp) => {
+        permissoes.push(rp.permissao.nome);
+      });
     }
 
     const token = jwt.sign(
-  { id: user.id, role: user.role?.toUpperCase() || "USER" },
-  process.env.JWT_SECRET || "segredo_super_secreto",
-  { expiresIn: "1h" }
-);
+      {
+        id: user.id,
+        role: user.role?.toUpperCase() || "USER",
+      },
+      process.env.JWT_SECRET || "segredo_super_secreto",
+      { expiresIn: "1h" }
+    );
 
     return res.json({
       message: "✅ Login efetuado com sucesso",
       token,
-      user: { id: user.id, nome: user.nome, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        role: user.role,
+        roleId: user.roleId,
+        permissoes,
+      },
     });
+
   } catch (err) {
     console.error("Erro em /login:", err);
-    return res.status(500).json({ error: "Erro interno no servidor." });
+    return res.status(500).json({
+      error: "Erro interno no servidor.",
+    });
   }
 });
 
