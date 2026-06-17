@@ -159,13 +159,14 @@ app.post("/login", async (req, res) => {
       });
     }
 
-    const permissoes = [];
+const permissoes = await prisma.rolePermissao.findMany({
+  where: { roleId: user.roleId },
+  include: {
+    permissao: true,
+  },
+});
 
-    if (user.roleRel?.permissoes) {
-      user.roleRel.permissoes.forEach((rp) => {
-        permissoes.push(rp.permissao.nome);
-      });
-    }
+const permissoesNomes = permissoes.map(p => p.permissao.nome);
 
     const token = jwt.sign(
       {
