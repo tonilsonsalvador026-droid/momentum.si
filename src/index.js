@@ -867,7 +867,7 @@ app.post(
           error: "Este inquilino já está associado a outra fração.",
         });
       }
-});
+
       estado = "OCUPADO";
     }
 
@@ -885,13 +885,14 @@ app.post(
         proprietario: true,
         inquilino: true,
       },
-    });
+});  
 
     res.status(201).json(fracao);
   } catch (err) {
     console.error("❌ Erro em POST /fracoes:", err);
     res.status(500).json({ error: "Erro ao criar fração." });
   }
+});
 
 // ✅ Atualizar fração
 app.put("/fracoes/:id", async (req, res) => {
