@@ -867,7 +867,7 @@ app.post(
           error: "Este inquilino já está associado a outra fração.",
         });
       }
-
+});
       estado = "OCUPADO";
     }
 
