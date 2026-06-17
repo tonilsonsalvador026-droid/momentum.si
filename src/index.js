@@ -8,6 +8,7 @@ const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("../authMiddleware");
+const checkPermissao = require("../checkPermissao");
 const { sendInviteEmail } = require("../mailer"); // 👉 importar mailer
 
 // -----------------------------------------------
@@ -815,7 +816,11 @@ app.get("/fracoes/:id", async (req, res) => {
 });
 
 // ✅ Criar fração
-app.post("/fracoes", async (req, res) => {
+app.post(
+  "/fracoes",
+  authMiddleware(),
+  checkPermissao("criar_fracoes"),
+  async (req, res) => {
   try {
     let { numero, tipo, edificioId, proprietarioId, inquilinoId } = req.body;
 
@@ -887,7 +892,6 @@ app.post("/fracoes", async (req, res) => {
     console.error("❌ Erro em POST /fracoes:", err);
     res.status(500).json({ error: "Erro ao criar fração." });
   }
-});
 
 // ✅ Atualizar fração
 app.put("/fracoes/:id", async (req, res) => {
