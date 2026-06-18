@@ -177,18 +177,18 @@ const permissoesNomes = permissoes.map(p => p.permissao.nome);
       { expiresIn: "1h" }
     );
 
-    return res.json({
-      message: "✅ Login efetuado com sucesso",
-      token,
-      user: {
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        role: user.role,
-        roleId: user.roleId,
-        permissoes,
-      },
-    });
+return res.json({
+  message: "✅ Login efetuado com sucesso",
+  token,
+  user: {
+    id: user.id,
+    nome: user.nome,
+    email: user.email,
+    role: user.role,
+    roleId: user.roleId,
+    permissoes: permissoesNomes,
+  },
+});
 
   } catch (err) {
     console.error("Erro em /login:", err);
