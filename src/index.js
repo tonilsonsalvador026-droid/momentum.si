@@ -8,6 +8,7 @@ const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("../authMiddleware");
+const permissao = require("../permissaoMiddleware");
 const checkPermissao = require("../checkPermissao");
 const { sendInviteEmail } = require("../mailer"); // 👉 importar mailer
 
