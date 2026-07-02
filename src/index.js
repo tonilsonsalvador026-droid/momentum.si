@@ -2144,6 +2144,7 @@ app.post(
   "/contas-correntes",
   authMiddleware(),
   permissao("criar_contas_correntes"),
+  async (req, res) => {
   try {
     const { proprietarioId, saldoInicial } = req.body;
 
