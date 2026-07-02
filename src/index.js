@@ -342,7 +342,11 @@ app.post("/users/set-password", async (req, res) => {
 // -----------------------------------------------
 // USERS (CRUD básico)
 // -----------------------------------------------
-app.get("/users", authMiddleware("admin"), async (req, res) => {
+app.get(
+  "/users",
+  authMiddleware(),
+  permissao("visualizar_utilizadores"),
+  async (req, res) => {
   try {
     const users = await prisma.user.findMany({
       select: { id: true, nome: true, email: true, role: true, roleId: true, isActive: true, criadoEm: true },
@@ -354,7 +358,11 @@ app.get("/users", authMiddleware("admin"), async (req, res) => {
   }
 });
 
-app.post("/users", authMiddleware("admin"), async (req, res) => {
+app.post(
+  "/users",
+  authMiddleware(),
+  permissao("criar_utilizadores"),
+  async (req, res) => {
   try {
     const { nome, email, password, role } = req.body;
 
@@ -398,7 +406,11 @@ app.post("/users", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 // CONDOMÍNIOS
 // -----------------------------------------------
-app.get("/condominios", authMiddleware(), async (req, res) => {
+app.get(
+  "/condominios",
+  authMiddleware(),
+  permissao("visualizar_condominios"),
+  async (req, res) => {
   try {
     const condominios = await prisma.condominio.findMany({
       include: {
@@ -414,7 +426,11 @@ app.get("/condominios", authMiddleware(), async (req, res) => {
   }
 });
 
-app.post("/condominios", authMiddleware("admin"), async (req, res) => {
+app.post(
+  "/condominios",
+  authMiddleware(),
+  permissao("criar_condominios"),
+  async (req, res) => {
   try {
     const { nome, localizacao, gestorId } = req.body;
 
