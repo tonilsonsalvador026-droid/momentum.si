@@ -454,7 +454,11 @@ app.post(
 // -----------------------------------------------
 // EDIFÍCIOS
 // -----------------------------------------------
-app.get("/edificios", authMiddleware(), async (req, res) => {
+app.get(
+  "/edificios",
+  authMiddleware(),
+  permissao("visualizar_edificios"),
+  async (req, res) => {
   try {
     const edificios = await prisma.edificio.findMany({
       include: {
@@ -473,7 +477,11 @@ app.get("/edificios", authMiddleware(), async (req, res) => {
   }
 });
 
-app.post("/edificios", authMiddleware("admin"), async (req, res) => {
+app.post(
+  "/edificios",
+  authMiddleware(),
+  permissao("criar_edificios"),
+  async (req, res) => {
   try {
     const { nome, endereco, numeroAndares, numeroApartamentos, condominioId } = req.body;
 
@@ -506,7 +514,11 @@ app.post("/edificios", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 // DETALHES DO EDIFÍCIO
 // -----------------------------------------------
-app.get("/edificios/:id", authMiddleware(), async (req, res) => {
+app.get(
+  "/edificios/:id",
+  authMiddleware(),
+  permissao("visualizar_edificios"),
+  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -535,9 +547,13 @@ app.get("/edificios/:id", authMiddleware(), async (req, res) => {
 });
 
 // ------------------------------------------------
-// ✅ Pagamentos de um edifício (para histórico)
+//  Pagamentos de um edifício (para histórico)
 // ------------------------------------------------
-app.get("/edificios/:id/pagamentos", async (req, res) => {
+app.get(
+  "/edificios/:id/pagamentos",
+  authMiddleware(),
+  permissao("visualizar_pagamentos"),
+  async (req, res) => {
   try {
     const edificioId = parseInt(req.params.id);
     if (isNaN(edificioId))
@@ -578,7 +594,11 @@ app.get("/edificios/:id/pagamentos", async (req, res) => {
 // -----------------------------------------------
 // HISTÓRICO DO PROPRIETÁRIO
 // -----------------------------------------------
-app.get("/proprietarios/:id/pagamentos", authMiddleware(), async (req, res) => {
+app.get(
+  "/proprietarios/:id/pagamentos",
+  authMiddleware(),
+  permissao("visualizar_pagamentos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const pagamentos = await prisma.pagamento.findMany({
@@ -602,7 +622,11 @@ app.get("/proprietarios/:id/pagamentos", authMiddleware(), async (req, res) => {
 // -----------------------------------------------
 // SERVIÇOS AGENDADOS DO PROPRIETÁRIO
 // -----------------------------------------------
-app.get("/proprietarios/:id/servicos-agendados", authMiddleware(), async (req, res) => {
+app.get(
+  "/proprietarios/:id/servicos-agendados",
+  authMiddleware(),
+  permissao("visualizar_servicos_agendados"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     // Vamos procurar serviços agendados ligados às frações desse proprietário
@@ -641,7 +665,11 @@ app.get("/proprietarios/:id/servicos-agendados", authMiddleware(), async (req, r
 // -----------------------------------------------
 // EVENTOS RELACIONADOS AO CONDOMÍNIO DO PROPRIETÁRIO
 // -----------------------------------------------
-app.get("/proprietarios/:id/eventos", authMiddleware(), async (req, res) => {
+app.get(
+  "/proprietarios/:id/eventos",
+  authMiddleware(),
+  permissao("visualizar_eventos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -682,7 +710,11 @@ app.get("/proprietarios/:id/eventos", authMiddleware(), async (req, res) => {
 // -----------------------------------------------
 // ROTA: Enviar mensagem para moradores de um edifício
 // -----------------------------------------------
-app.post("/mensagens", authMiddleware("admin"), async (req, res) => {
+app.post(
+  "/mensagens",
+  authMiddleware(),
+  permissao("criar_mensagens"),
+  async (req, res) => {
   try {
     const { edificioId, assunto, conteudo } = req.body;
 
@@ -770,7 +802,11 @@ app.post("/mensagens", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 
 // ✅ Listar frações vagas (SEM inquilino)
-app.get("/fracoes/vagas", async (req, res) => {
+app.get(
+  "/fracoes/vagas",
+  authMiddleware(),
+  permissao("visualizar_fracoes"),
+  async (req, res) => {
   try {
     const fracoes = await prisma.fracao.findMany({
       where: {
@@ -793,7 +829,11 @@ app.get("/fracoes/vagas", async (req, res) => {
 });
 
 // ✅ Listar todas as frações
-app.get("/fracoes", async (req, res) => {
+app.get(
+  "/fracoes",
+  authMiddleware(),
+  permissao("visualizar_fracoes"),
+  async (req, res) => {
   try {
     const fracoes = await prisma.fracao.findMany({
       include: {
@@ -812,7 +852,11 @@ app.get("/fracoes", async (req, res) => {
 });
 
 // ✅ Buscar fração por ID
-app.get("/fracoes/:id", async (req, res) => {
+app.get(
+  "/fracoes/:id",
+  authMiddleware(),
+  permissao("visualizar_fracoes"),
+  async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido." });
@@ -837,7 +881,7 @@ app.get("/fracoes/:id", async (req, res) => {
 app.post(
   "/fracoes",
   authMiddleware(),
-  checkPermissao("criar_fracoes"),
+  permissao("criar_fracoes"),
   async (req, res) => {
   try {
     let { numero, tipo, edificioId, proprietarioId, inquilinoId } = req.body;
@@ -913,7 +957,11 @@ app.post(
 });
 
 // ✅ Atualizar fração
-app.put("/fracoes/:id", async (req, res) => {
+app.put(
+  "/fracoes/:id",
+  authMiddleware(),
+  permissao("editar_fracoes"),
+  async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido." });
@@ -976,7 +1024,11 @@ app.put("/fracoes/:id", async (req, res) => {
 });
 
 // ✅ Excluir fração
-app.delete("/fracoes/:id", async (req, res) => {
+app.delete(
+  "/fracoes/:id",
+  authMiddleware(),
+  permissao("eliminar_fracoes"),
+  async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido." });
@@ -1006,7 +1058,11 @@ app.delete("/fracoes/:id", async (req, res) => {
 // -----------------------------------------------
 
 // ✅ Listar inquilinos
-app.get("/inquilinos", async (req, res) => {
+app.get(
+  "/inquilinos",
+  authMiddleware(),
+  permissao("visualizar_inquilinos"),
+  async (req, res) => {
   try {
     const inquilinos = await prisma.inquilino.findMany({
       include: {
@@ -1024,9 +1080,14 @@ app.get("/inquilinos", async (req, res) => {
     res.status(500).json({ error: "Erro ao listar inquilinos." });
   }
 });
-
-// ✅ Criar inquilino
-app.post("/inquilinos", async (req, res) => {
+// -----------------------------------------------
+// Criar inquilinos
+// ----------------------------------------------
+app.post(
+  "/inquilinos",
+  authMiddleware(),
+  permissao("criar_inquilinos"),
+  async (req, res) => {
   try {
     const { nome, telefone, email, nif, fracaoId } = req.body;
 
@@ -1055,9 +1116,14 @@ app.post("/inquilinos", async (req, res) => {
     res.status(500).json({ error: "Erro ao criar inquilino." });
   }
 });
-
-// ✅ Atualizar inquilino
-app.put("/inquilinos/:id", async (req, res) => {
+// ---------------------------------------
+// Atualizar inquilino
+// ---------------------------------------
+app.put(
+  "/inquilinos/:id",
+  authMiddleware(),
+  permissao("editar_inquilinos"),
+  async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { nome, telefone, email, nif, fracaoId } = req.body;
@@ -1110,8 +1176,14 @@ app.put("/inquilinos/:id", async (req, res) => {
   }
 });
 
-// ✅ Excluir inquilino
-app.delete("/inquilinos/:id", async (req, res) => {
+// ----------------------------------
+// Excluir inquilino
+// ----------------------------------
+app.delete(
+  "/inquilinos/:id",
+  authMiddleware(),
+  permissao("eliminar_inquilinos"),
+  async (req, res) => {
   try {
     const id = Number(req.params.id);
 
@@ -1144,10 +1216,15 @@ app.delete("/inquilinos/:id", async (req, res) => {
     res.status(500).json({ error: "Erro ao excluir inquilino." });
   }
 });
+
 // -----------------------------------------------
 // ROTAS DE PROPRIETÁRIOS
 // -----------------------------------------------
-app.get("/proprietarios", async (req, res) => {
+app.get(
+  "/proprietarios",
+  authMiddleware(),
+  permissao("visualizar_proprietarios"),
+  async (req, res) => {
   try {
     const proprietarios = await prisma.proprietario.findMany({
       include: { fracoes: true },
@@ -1159,7 +1236,11 @@ app.get("/proprietarios", async (req, res) => {
   }
 });
 
-app.post("/proprietarios", async (req, res) => {
+app.post(
+  "/proprietarios",
+  authMiddleware(),
+  permissao("criar_proprietarios"),
+  async (req, res) => {
   try {
     const { nome, telefone, email, nif } = req.body;  // 👈 agora pega o nif
     const proprietario = await prisma.proprietario.create({
@@ -1172,7 +1253,11 @@ app.post("/proprietarios", async (req, res) => {
   }
 });
 
-app.put("/proprietarios/:id", async (req, res) => {
+app.put(
+  "/proprietarios/:id",
+  authMiddleware(),
+  permissao("editar_proprietarios"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, telefone, email, nif } = req.body;  // 👈 adiciona nif aqui também
@@ -1187,7 +1272,11 @@ app.put("/proprietarios/:id", async (req, res) => {
   }
 });
 
-app.delete("/proprietarios/:id", async (req, res) => {
+app.delete(
+  "/proprietarios/:id",
+  authMiddleware(),
+  permissao("eliminar_proprietarios"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.proprietario.delete({ where: { id: Number(id) } });
@@ -1218,9 +1307,14 @@ function formatarKz(valor) {
     minimumFractionDigits: 2,
   }).format(valor);
 }
-
+// ------------------------------------------------
 // Criar novo movimento
-app.post("/movimentos", async (req, res) => {
+// ------------------------------------------------
+app.post(
+  "/movimentos",
+  authMiddleware(),
+  permissao("criar_movimentos"),
+  async (req, res) => {
   try {
     const { proprietarioId, data, descricao, tipo, valor } = req.body;
 
@@ -1274,8 +1368,14 @@ app.post("/movimentos", async (req, res) => {
   }
 });
 
+// ---------------------------------------------
 // Listar todos os movimentos
-app.get("/movimentos", async (req, res) => {
+// ---------------------------------------------
+app.get(
+  "/movimentos",
+  authMiddleware(),
+  permissao("visualizar_movimentos"),
+  async (req, res) => {
   try {
     const movimentos = await prisma.movimento.findMany({
       include: { contaCorrente: { include: { proprietario: true } } },
@@ -1299,7 +1399,11 @@ app.get("/movimentos", async (req, res) => {
 // -----------------------------------------------
 // ROTA: Obter total de pagamentos por proprietário
 // -----------------------------------------------
-app.get("/proprietarios/:id/total-pagos", async (req, res) => {
+app.get(
+  "/proprietarios/:id/total-pagos",
+  authMiddleware(),
+  permissao("visualizar_proprietarios"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const total = await prisma.pagamento.aggregate({
@@ -1364,9 +1468,13 @@ function formatarPagamento(pagamento) {
 }
 
 // ------------------------------------------------
-// ✅ Listar pagamentos (ativos) com paginação
+// Listar pagamentos (ativos) com paginação
 // ------------------------------------------------
-app.get("/pagamentos", async (req, res) => {
+app.get(
+  "/pagamentos",
+  authMiddleware(),
+  permissao("visualizar_pagamentos"),
+  async (req, res) => {
   try {
     const { estado, page = 1, limit = 20 } = req.query;
     const where = { ativo: true };
@@ -1405,9 +1513,13 @@ app.get("/pagamentos", async (req, res) => {
 });
 
 // ------------------------------------------------
-// ✅ Listar pagamentos eliminados (soft delete)
+// Listar pagamentos eliminados (soft delete)
 // ------------------------------------------------
-app.get("/pagamentos/eliminados", async (req, res) => {
+app.get(
+  "/pagamentos/eliminados",
+  authMiddleware(),
+  permissao("visualizar_pagamentos"),
+  async (req, res) => {
   try {
     const eliminados = await prisma.pagamento.findMany({
       where: { ativo: false },
@@ -1429,9 +1541,13 @@ app.get("/pagamentos/eliminados", async (req, res) => {
 });
 
 // ------------------------------------------------
-// ✅ Buscar pagamento específico
+// Buscar pagamento específico
 // ------------------------------------------------
-app.get("/pagamentos/:id", async (req, res) => {
+app.get(
+  "/pagamentos/:id",
+  authMiddleware(),
+  permissao("visualizar_pagamentos"),
+  async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido" });
@@ -1458,9 +1574,13 @@ app.get("/pagamentos/:id", async (req, res) => {
 });
 
 // ------------------------------------------------
-// ✅ Criar pagamento
+// Criar pagamento
 // ------------------------------------------------
-app.post("/pagamentos", async (req, res) => {
+app.post(
+  "/pagamentos",
+  authMiddleware(),
+  permissao("criar_pagamentos"),
+  async (req, res) => {
   try {
     let {
       valor,
@@ -1510,9 +1630,13 @@ app.post("/pagamentos", async (req, res) => {
 });
 
 // ------------------------------------------------
-// ✅ Atualizar pagamento + histórico (corrigido)
+// Atualizar pagamento + histórico (corrigido)
 // ------------------------------------------------
-app.put("/pagamentos/:id", async (req, res) => {
+app.put(
+  "/pagamentos/:id",
+  authMiddleware(),
+  permissao("editar_pagamentos"),
+  async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido" });
@@ -1610,9 +1734,13 @@ app.put("/pagamentos/:id", async (req, res) => {
 });
 
 // ------------------------------------------------
-// ✅ Soft delete (mover para eliminados)
+// Soft delete (mover para eliminados)
 // ------------------------------------------------
-app.put("/pagamentos/:id/delete", async (req, res) => {
+app.put(
+  "/pagamentos/:id/delete",
+  authMiddleware(),
+  permissao("eliminar_pagamentos"),
+  async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido" });
@@ -1669,7 +1797,11 @@ app.delete("/pagamentos/:id", (req, res) => {
 // -----------------------------------------------
 
 // Lista de recibos (com paginação)
-app.get("/recibos", async (req, res) => {
+app.get(
+  "/recibos",
+  authMiddleware(),
+  permissao("visualizar_recibos"),
+  async (req, res) => {
   try {
     let { page = 1, limit = 10 } = req.query;
     page = parseInt(page);
@@ -1699,9 +1831,14 @@ app.get("/recibos", async (req, res) => {
     res.status(500).json({ error: "Erro ao listar recibos." });
   }
 });
-
+// ---------------------------------------------
 // Buscar um recibo por ID
-app.get("/recibos/:id", async (req, res) => {
+// ---------------------------------------------
+app.get(
+  "/recibos/:id",
+  authMiddleware(),
+  permissao("visualizar_recibos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const recibo = await prisma.recibo.findUnique({
@@ -1724,8 +1861,14 @@ app.get("/recibos/:id", async (req, res) => {
   }
 });
 
+// ----------------------------------------------
 // Criar recibo
-app.post("/recibos", async (req, res) => {
+// ----------------------------------------------
+app.post(
+  "/recibos",
+  authMiddleware(),
+  permissao("criar_recibos"),
+  async (req, res) => {
   try {
     const { numero, pagamentoId } = req.body;
 
@@ -1740,8 +1883,14 @@ app.post("/recibos", async (req, res) => {
   }
 });
 
+// --------------------------------------------
 // Atualizar recibo
-app.put("/recibos/:id", async (req, res) => {
+// --------------------------------------------
+app.post(
+  "/recibos",
+  authMiddleware(),
+  permissao("criar_recibos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { numero, pagamentoId } = req.body;
@@ -1757,9 +1906,14 @@ app.put("/recibos/:id", async (req, res) => {
     res.status(500).json({ error: "Erro ao atualizar recibo." });
   }
 });
-
+// ------------------------------------------
 // Eliminar recibo
-app.delete("/recibos/:id", async (req, res) => {
+// ------------------------------------------
+app.delete(
+  "/recibos/:id",
+  authMiddleware(),
+  permissao("eliminar_recibos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -1778,8 +1932,11 @@ app.delete("/recibos/:id", async (req, res) => {
 // GERAR PDF do recibo (versão final profissional)
 // -----------------------------------------------
 const PDFDocument = require("pdfkit");
-
-app.get("/recibos/:id/pdf", async (req, res) => {
+app.get(
+  "/recibos/:id/pdf",
+  authMiddleware(),
+  permissao("visualizar_recibos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -1928,7 +2085,11 @@ function formatarKz(valor) {
 // -----------------------------------------------
 // ROTAS DE CONTA CORRENTE
 // -----------------------------------------------
-app.get("/contas-correntes", async (req, res) => {
+app.get(
+  "/contas-correntes",
+  authMiddleware(),
+  permissao("visualizar_contas_correntes"),
+  async (req, res) => {
   try {
     const contas = await prisma.contaCorrente.findMany({
       include: { proprietario: true, movimentos: true },
@@ -1949,7 +2110,11 @@ app.get("/contas-correntes", async (req, res) => {
   }
 });
 
-app.get("/contas-correntes/:id", async (req, res) => {
+app.get(
+  "/contas-correntes/:id",
+  authMiddleware(),
+  permissao("visualizar_contas_correntes"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const conta = await prisma.contaCorrente.findUnique({
@@ -1972,8 +2137,13 @@ app.get("/contas-correntes/:id", async (req, res) => {
   }
 });
 
+// -----------------------------------------------------
 // Criar nova conta corrente com movimento de abertura
-app.post("/contas-correntes", async (req, res) => {
+// -----------------------------------------------------
+app.post(
+  "/contas-correntes",
+  authMiddleware(),
+  permissao("criar_contas_correntes"),
   try {
     const { proprietarioId, saldoInicial } = req.body;
 
@@ -2024,7 +2194,11 @@ app.post("/contas-correntes", async (req, res) => {
   }
 });
 
-app.put("/contas-correntes/:id", async (req, res) => {
+app.put(
+  "/contas-correntes/:id",
+  authMiddleware(),
+  permissao("editar_contas_correntes"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { saldoInicial, saldoAtual } = req.body;
@@ -2048,7 +2222,11 @@ app.put("/contas-correntes/:id", async (req, res) => {
   }
 });
 
-app.delete("/contas-correntes/:id", async (req, res) => {
+app.delete(
+  "/contas-correntes/:id",
+  authMiddleware(),
+  permissao("eliminar_contas_correntes"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const contaId = parseInt(id);
@@ -2070,8 +2248,14 @@ app.delete("/contas-correntes/:id", async (req, res) => {
   }
 });
 
+// ---------------------------------------------
 // Buscar conta corrente por proprietário
-app.get("/contas-correntes/proprietario/:id", async (req, res) => {
+// ---------------------------------------------
+app.get(
+  "/contas-correntes/proprietario/:id",
+  authMiddleware(),
+  permissao("visualizar_contas_correntes"),
+  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -2100,7 +2284,11 @@ app.get("/contas-correntes/proprietario/:id", async (req, res) => {
 // -----------------------------------------------
 // ROTAS DE MOVIMENTOS DA CONTA CORRENTE
 // -----------------------------------------------
-app.post("/contas-correntes/:id/movimentos", async (req, res) => {
+app.post(
+  "/contas-correntes/:id/movimentos",
+  authMiddleware(),
+  permissao("editar_conta_corrente"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { tipo, valor, descricao, data } = req.body;
@@ -2171,8 +2359,14 @@ app.post("/contas-correntes/:id/movimentos", async (req, res) => {
   }
 });
 
+// -----------------------------------------
 // Listar movimentos de uma conta
-app.get("/contas-correntes/:id/movimentos", async (req, res) => {
+// -----------------------------------------
+app.get(
+  "/contas-correntes/:id/movimentos",
+  authMiddleware(),
+  permissao("visualizar_conta_corrente"),
+  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -2237,8 +2431,14 @@ const movimentosComSaldo = movimentos.map((mov) => {
   }
 });
 
+// ------------------------------
 // Eliminar movimento
-app.delete("/movimentos/:id", async (req, res) => {
+// ------------------------------
+app.delete(
+  "/movimentos/:id",
+  authMiddleware(),
+  permissao("editar_conta_corrente"),
+  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -2299,7 +2499,11 @@ app.delete("/movimentos/:id", async (req, res) => {
 // -----------------------------------------------
 // ROLES (Papéis de Utilizador)
 // -----------------------------------------------
-app.get("/roles", authMiddleware("admin"), async (req, res) => {
+app.get(
+  "/roles",
+  authMiddleware(),
+  permissao("visualizar_roles"),
+  async (req, res) => {
   try {
     const roles = await prisma.role.findMany({
       include: { permissoes: { include: { permissao: true } } },
@@ -2312,7 +2516,11 @@ app.get("/roles", authMiddleware("admin"), async (req, res) => {
   }
 });
 
-app.get("/roles/:id", authMiddleware("admin"), async (req, res) => {
+app.get(
+  "/roles/:id",
+  authMiddleware(),
+  permissao("visualizar_roles"),
+  async (req, res) => {
   try {
     const role = await prisma.role.findUnique({
       where: { id: parseInt(req.params.id) },
@@ -2326,7 +2534,11 @@ app.get("/roles/:id", authMiddleware("admin"), async (req, res) => {
   }
 });
 
-app.post("/roles", authMiddleware("admin"), async (req, res) => {
+app.post(
+  "/roles",
+  authMiddleware(),
+  permissao("criar_roles"),
+  async (req, res) => {
   try {
     const { nome, descricao } = req.body;
     if (!nome) return res.status(400).json({ error: "Nome obrigatório." });
@@ -2342,7 +2554,11 @@ app.post("/roles", authMiddleware("admin"), async (req, res) => {
   }
 });
 
-app.put("/roles/:id", authMiddleware("admin"), async (req, res) => {
+app.put(
+  "/roles/:id",
+  authMiddleware(),
+  permissao("editar_roles"),
+  async (req, res) => {
   try {
     const { nome, descricao } = req.body;
     const role = await prisma.role.update({
@@ -2356,7 +2572,11 @@ app.put("/roles/:id", authMiddleware("admin"), async (req, res) => {
   }
 });
 
-app.delete("/roles/:id", authMiddleware("admin"), async (req, res) => {
+app.delete(
+  "/roles/:id",
+  authMiddleware(),
+  permissao("eliminar_roles"),
+  async (req, res) => {
   try {
     await prisma.role.delete({ where: { id: parseInt(req.params.id) } });
     res.json({ message: "Papel removido com sucesso." });
@@ -2369,7 +2589,11 @@ app.delete("/roles/:id", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 // PERMISSÕES
 // -----------------------------------------------
-app.get("/permissoes", authMiddleware("admin"), async (req, res) => {
+app.get(
+  "/permissoes",
+  authMiddleware(),
+  permissao("visualizar_permissoes"),
+  async (req, res) => {
   try {
     const permissoes = await prisma.permissao.findMany({
       orderBy: { id: "asc" },
@@ -2381,7 +2605,11 @@ app.get("/permissoes", authMiddleware("admin"), async (req, res) => {
   }
 });
 
-app.post("/permissoes", authMiddleware("admin"), async (req, res) => {
+app.post(
+  "/permissoes",
+  authMiddleware(),
+  permissao("criar_permissoes"),
+  async (req, res) => {
   try {
     const { nome, descricao } = req.body;
     if (!nome) return res.status(400).json({ error: "Nome obrigatório." });
@@ -2400,7 +2628,11 @@ app.post("/permissoes", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 // ASSOCIAÇÃO ROLE ↔ PERMISSÕES
 // -----------------------------------------------
-app.post("/roles/:roleId/permissoes", authMiddleware("admin"), async (req, res) => {
+app.post(
+  "/roles/:roleId/permissoes",
+  authMiddleware(),
+  permissao("editar_roles"),
+  async (req, res) => {
   try {
     const { permissaoIds } = req.body;
     const roleId = parseInt(req.params.roleId);
@@ -2431,7 +2663,11 @@ app.post("/roles/:roleId/permissoes", authMiddleware("admin"), async (req, res) 
 // -----------------------------------------------
 // ATRIBUIR ROLE A UM USER
 // -----------------------------------------------
-app.put("/users/:id/role", authMiddleware("admin"), async (req, res) => {
+app.put(
+  "/users/:id/role",
+  authMiddleware(),
+  permissao("atribuir_roles"),
+  async (req, res) => {
   try {
     const { roleId } = req.body;
     if (!roleId) return res.status(400).json({ error: "roleId obrigatório." });
@@ -2453,8 +2689,11 @@ app.put("/users/:id/role", authMiddleware("admin"), async (req, res) => {
 // ROTAS DE EVENTOS
 // -----------------------------------------------
 
-app.get("/eventos", async (req, res) => {
-
+app.get(
+  "/eventos",
+  authMiddleware(),
+  permissao("visualizar_eventos"),
+  async (req, res) => {
   try {
 
     const eventos = await prisma.evento.findMany({
@@ -2488,8 +2727,11 @@ app.get("/eventos", async (req, res) => {
 // -----------------------------------------------
 // CRIAR EVENTO
 // -----------------------------------------------
-app.post("/eventos", async (req, res) => {
-
+app.post(
+  "/eventos",
+  authMiddleware(),
+  permissao("criar_eventos"),
+  async (req, res) => {
   try {
 
     const {
@@ -2533,8 +2775,11 @@ app.post("/eventos", async (req, res) => {
 // -----------------------------------------------
 // ATUALIZAR EVENTO
 // -----------------------------------------------
-app.put("/eventos/:id", async (req, res) => {
-
+app.put(
+  "/eventos/:id",
+  authMiddleware(),
+  permissao("editar_eventos"),
+  async (req, res) => {
   try {
 
     const { id } = req.params;
@@ -2595,8 +2840,11 @@ app.put("/eventos/:id", async (req, res) => {
 // -----------------------------------------------
 // ELIMINAR EVENTO
 // -----------------------------------------------
-app.delete("/eventos/:id", async (req, res) => {
-
+app.delete(
+  "/eventos/:id",
+  authMiddleware(),
+  permissao("eliminar_eventos"),
+  async (req, res) => {
   try {
 
     const { id } = req.params;
@@ -2630,7 +2878,11 @@ app.delete("/eventos/:id", async (req, res) => {
 // -----------------------------------------------
 // ROTAS DE SERVIÇOS EXTRAS
 // -----------------------------------------------
-app.get("/servicos-extras", async (req, res) => {
+app.get(
+  "/servicos-extras",
+  authMiddleware(),
+  permissao("visualizar_servicos_extras"),
+  async (req, res) => {
   try {
     const servicos = await prisma.servicoExtra.findMany();
     res.json(servicos);
@@ -2640,7 +2892,11 @@ app.get("/servicos-extras", async (req, res) => {
   }
 });
 
-app.post("/servicos-extras", async (req, res) => {
+app.post(
+  "/servicos-extras",
+  authMiddleware(),
+  permissao("criar_servicos_extras"),
+  async (req, res) => {
   try {
     const { nome, descricao, valor } = req.body;
     const servico = await prisma.servicoExtra.create({
@@ -2653,7 +2909,11 @@ app.post("/servicos-extras", async (req, res) => {
   }
 });
 
-app.put("/servicos-extras/:id", async (req, res) => {
+app.put(
+  "/servicos-extras/:id",
+  authMiddleware(),
+  permissao("editar_servicos_extras"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, descricao, valor } = req.body;
@@ -2668,7 +2928,11 @@ app.put("/servicos-extras/:id", async (req, res) => {
   }
 });
 
-app.delete("/servicos-extras/:id", async (req, res) => {
+app.delete(
+  "/servicos-extras/:id",
+  authMiddleware(),
+  permissao("eliminar_servicos_extras"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.servicoExtra.delete({ where: { id: Number(id) } });
@@ -2682,7 +2946,11 @@ app.delete("/servicos-extras/:id", async (req, res) => {
 // -----------------------------------------------
 // ROTAS DE SERVIÇOS AGENDADOS
 // -----------------------------------------------
-app.get("/servicos-agendados", async (req, res) => {
+app.get(
+  /servicos-agendados",
+  authMiddleware(),
+  permissao("visualizar_servicos_agendados"),
+  async (req, res) => {
   try {
     const agendados = await prisma.servicoAgendado.findMany({
       include: { servico: true },
@@ -2694,7 +2962,11 @@ app.get("/servicos-agendados", async (req, res) => {
   }
 });
 
-app.post("/servicos-agendados", async (req, res) => {
+app.post(
+  "/servicos-agendados",
+  authMiddleware(),
+  permissao("criar_servicos_agendados"),
+  async (req, res) => {
   try {
     const { data, servicoId, observacoes, userId } = req.body;
 
@@ -2714,7 +2986,11 @@ app.post("/servicos-agendados", async (req, res) => {
   }
 });
 
-app.put("/servicos-agendados/:id", async (req, res) => {
+app.put(
+  "/servicos-agendados/:id",
+  authMiddleware(),
+  permissao("editar_servicos_agendados"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const { data, servicoId, observacoes, userId } = req.body;
@@ -2736,7 +3012,11 @@ app.put("/servicos-agendados/:id", async (req, res) => {
   }
 });
 
-app.delete("/servicos-agendados/:id", async (req, res) => {
+app.delete(
+  "/servicos-agendados/:id",
+  authMiddleware(),
+  permissao("eliminar_servicos_agendados"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.servicoAgendado.delete({ where: { id: Number(id) } });
@@ -2751,8 +3031,14 @@ app.delete("/servicos-agendados/:id", async (req, res) => {
 // ROTAS DE PAGAMENTOS + HISTÓRICO
 // -----------------------------------------------
 
-// ✅ Listar todos os pagamentos
-app.get("/pagamentos", authMiddleware(), async (req, res) => {
+// -----------------------------------------------
+// Listar todos os pagamentos
+// -----------------------------------------------
+app.get(
+  /pagamentos",
+  authMiddleware(),
+  permissao("visualizar_pagamentos"),
+  async (req, res) => {
   try {
     const pagamentos = await prisma.pagamento.findMany({
       include: {
@@ -2778,9 +3064,14 @@ app.get("/pagamentos", authMiddleware(), async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar pagamentos" });
   }
 });
-
-// ✅ Criar pagamento
-app.post("/pagamentos", authMiddleware(), async (req, res) => {
+// ---------------------------------------------------
+// Criar pagamento
+// ---------------------------------------------------
+app.post(
+  "/pagamentos",
+  authMiddleware(),
+  permissao("criar_pagamentos"),
+  async (req, res) => {
   try {
     let { valor, descricao, estado, data, fracaoId } = req.body;
     const userId = req.user.id; // 🔹 vem do token
@@ -2826,8 +3117,14 @@ app.post("/pagamentos", authMiddleware(), async (req, res) => {
   }
 });
 
-// ✅ Atualizar pagamento
-app.put("/pagamentos/:id", authMiddleware(), async (req, res) => {
+// ---------------------------------------------------------
+// Atualizar pagamento
+// ---------------------------------------------------------
+app.put(
+  "/pagamentos/:id",
+  authMiddleware(),
+  permissao("editar_pagamentos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     let { valor, descricao, estado, data, fracaoId } = req.body;
@@ -2875,8 +3172,14 @@ app.put("/pagamentos/:id", authMiddleware(), async (req, res) => {
   }
 });
 
-// ✅ Eliminar pagamento
-app.delete("/pagamentos/:id", authMiddleware(), async (req, res) => {
+// ----------------------------------------------------------------------
+// Eliminar pagamento
+// ----------------------------------------------------------------------
+app.delete(
+  "/pagamentos/:id",
+  authMiddleware(),
+  permissao("eliminar_pagamentos"),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id; // 🔹 vem do token
@@ -2903,9 +3206,15 @@ app.delete("/pagamentos/:id", authMiddleware(), async (req, res) => {
   }
 });
 
-// ✅ Listar histórico de um pagamento
-app.get("/pagamentos/:id/historico", authMiddleware(), async (req, res) => {
-  try {
+// ----------------------------------------------------------------------
+// Listar histórico de um pagamento
+// ----------------------------------------------------------------------
+app.get(
+  "/pagamentos/:id/historico",
+  authMiddleware(),
+  permissao("visualizar_pagamentos"),
+  async (req, res) => {
+    try {
     const { id } = req.params;
 
     const historico = await prisma.historicoPagamento.findMany({
