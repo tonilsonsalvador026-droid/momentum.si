@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -3036,7 +3037,7 @@ app.delete(
 // Listar todos os pagamentos
 // -----------------------------------------------
 app.get(
-  /pagamentos",
+  "/pagamentos",
   authMiddleware(),
   permissao("visualizar_pagamentos"),
   async (req, res) => {
