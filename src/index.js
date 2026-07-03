@@ -2949,7 +2949,7 @@ app.delete(
 // ROTAS DE SERVIÇOS AGENDADOS
 // -----------------------------------------------
 app.get(
-  /servicos-agendados",
+  "/servicos-agendados",
   authMiddleware(),
   permissao("visualizar_servicos_agendados"),
   async (req, res) => {
