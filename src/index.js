@@ -3362,6 +3362,30 @@ app.delete("/notificacoes/:id", async (req, res) => {
 });
 
 // -----------------------------------------------
+// Vamos criar uma notificação de teste
+// -----------------------------------------------
+app.post("/notificacoes/teste", async (req, res) => {
+  try {
+    const notificacao = await prisma.notificacao.create({
+      data: {
+        titulo: "Notificação de teste",
+        descricao: "O sistema de notificações está a funcionar.",
+        tipo: "teste",
+      },
+    });
+
+    res.json(notificacao);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Erro ao criar notificação.",
+    });
+  }
+});
+
+
+// -----------------------------------------------
 // Inicializar Servidor
 // -----------------------------------------------
 const PORT = process.env.PORT || 5000; // 👈 esta linha tem de vir antes do app.listen
