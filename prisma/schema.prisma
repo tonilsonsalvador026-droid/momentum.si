@@ -25,6 +25,9 @@ model User {
   pagamentos  Pagamento[]
   servicos    ServicoAgendado[]
   historicos  HistoricoPagamento[]
+  
+  // 🆕 Outro lado da relação com as notificações
+  notificacoes Notificacao[]
 }
 
 model Role {
@@ -53,14 +56,14 @@ model RolePermissao {
 }
 
 model Condominio {
-  id          Int        @id @default(autoincrement())
-  nome        String
-  localizacao String
-  gestorId    Int
-  criadoEm    DateTime   @default(now())
-  gestor      User       @relation("GestorCondominio", fields: [gestorId], references: [id])
-  edificios   Edificio[]
-  eventos     Evento[]
+  id           Int        @id @default(autoincrement())
+  nome         String
+  localizacao  String
+  gestorId     Int
+  criadoEm     DateTime   @default(now())
+  gestor       User       @relation("GestorCondominio", fields: [gestorId], references: [id])
+  edificios    Edificio[]
+  eventos      Evento[]
 }
 
 model Edificio {
@@ -209,6 +212,20 @@ model Evento {
   criadoPor    Int
   condominio   Condominio @relation(fields: [condominioId], references: [id])
   user         User       @relation(fields: [criadoPor], references: [id])
+}
+
+model Notificacao {
+  id          Int      @id @default(autoincrement())
+  titulo      String
+  descricao   String?
+  tipo        String
+  lida        Boolean  @default(false)
+  userId      Int?
+  criadoEm    DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@map("notificacoes")
 }
 
 enum EstadoFracao {
