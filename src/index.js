@@ -3233,6 +3233,135 @@ app.get(
 });
 
 // -----------------------------------------------
+// NOTIFICAÇÕES
+// -----------------------------------------------
+app.get("/notificacoes", async (req, res) => {
+  try {
+    const notificacoes = await prisma.notificacao.findMany({
+      orderBy: {
+        criadoEm: "desc",
+      },
+    });
+
+    res.json(notificacoes);
+  } catch (err) {
+    console.error("Erro em GET /notificacoes:", err);
+
+    res.status(500).json({
+      error: "Erro ao listar notificações.",
+    });
+  }
+});
+
+// -----------------------------------------------
+// Criar uma notificação
+// -----------------------------------------------
+app.post("/notificacoes", async (req, res) => {
+  try {
+    const {
+      titulo,
+      descricao,
+      tipo,
+      userId,
+    } = req.body;
+
+    const notificacao = await prisma.notificacao.create({
+      data: {
+        titulo,
+        descricao,
+        tipo,
+        userId: userId ? Number(userId) : null,
+      },
+    });
+
+    res.status(201).json(notificacao);
+  } catch (err) {
+    console.error("Erro em POST /notificacoes:", err);
+
+    res.status(500).json({
+      error: "Erro ao criar notificação.",
+    });
+  }
+});
+
+// -----------------------------------------------
+// Marcar uma notificação como lida
+// -----------------------------------------------
+app.put("/notificacoes/:id/lida", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const notificacao = await prisma.notificacao.update({
+      where: {
+        id: Number(id),
+      },
+      data: {
+        lida: true,
+      },
+    });
+
+    res.json(notificacao);
+  } catch (err) {
+    console.error("Erro em PUT /notificacoes/:id/lida:", err);
+
+    res.status(500).json({
+      error: "Erro ao atualizar notificação.",
+    });
+  }
+});
+
+// -----------------------------------------------
+// Marcar todas como lidas
+// -----------------------------------------------
+app.put("/notificacoes/lidas", async (req, res) => {
+  try {
+    await prisma.notificacao.updateMany({
+      where: {
+        lida: false,
+      },
+      data: {
+        lida: true,
+      },
+    });
+
+    res.json({
+      message: "Todas as notificações foram marcadas como lidas.",
+    });
+  } catch (err) {
+    console.error("Erro em PUT /notificacoes/lidas:", err);
+
+    res.status(500).json({
+      error: "Erro ao atualizar notificações.",
+    });
+  }
+});
+
+// -----------------------------------------------
+// Eliminar uma notificação
+// -----------------------------------------------
+app.delete("/notificacoes/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.notificacao.delete({
+      where: {
+        id: Number(id),
+      },
+    });
+
+    res.json({
+      message: "Notificação eliminada com sucesso.",
+    });
+  } catch (err) {
+    console.error("Erro em DELETE /notificacoes/:id:", err);
+
+    res.status(500).json({
+      error: "Erro ao eliminar notificação.",
+    });
+  }
+});
+
+// -----------------------------------------------
 // Inicializar Servidor
 // -----------------------------------------------
 const PORT = process.env.PORT || 5000; // 👈 esta linha tem de vir antes do app.listen
