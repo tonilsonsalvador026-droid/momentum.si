@@ -3361,38 +3361,66 @@ app.delete("/notificacoes/:id", async (req, res) => {
   }
 });
 
-// -----------------------------------------------
-// Vamos criar uma notificação de teste
-// -----------------------------------------------
-app.get("/notificacoes/teste", async (req, res) => {
+async function verificarPagamentosVencidos() {
   try {
-    const notificacao =
-      await prisma.notificacao.create({
-        data: {
-          titulo: "Notificação de teste",
-          descricao:
-            "O sistema de notificações está a funcionar.",
-          tipo: "teste",
+    const hoje = new Date();
+
+    const pagamentos = await prisma.pagamento.findMany({
+      where: {
+        estado: "PENDENTE",
+        vencimento: {
+          lt: hoje,
         },
-      });
-
-    res.json(notificacao);
-  } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      error:
-        "Erro ao criar notificação de teste.",
+      },
+      include: {
+        fracao: true,
+      },
     });
-  }
-});
 
+    for (const pagamento of pagamentos) {
+      const jaExiste =
+        await prisma.notificacao.findFirst({
+          where: {
+            tipo: "pagamento_vencido",
+            descricao: {
+              contains: `Pagamento ${pagamento.id}`,
+            },
+          },
+        });
+
+      if (!jaExiste) {
+        await prisma.notificacao.create({
+          data: {
+            titulo: "Pagamento vencido",
+            descricao: `Pagamento ${pagamento.id} da fração ${
+              pagamento.fracao?.numero || ""
+            } encontra-se vencido.`,
+            tipo: "pagamento_vencido",
+          },
+        });
+      }
+    }
+  } catch (err) {
+    console.error(
+      "Erro ao verificar pagamentos vencidos:",
+      err
+    );
+  }
+}
 
 // -----------------------------------------------
 // Inicializar Servidor
 // -----------------------------------------------
-const PORT = process.env.PORT || 5000; // 👈 esta linha tem de vir antes do app.listen
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Servidor a correr na porta ${PORT} (acessível pela rede local)`);
+  
+  // Executa uma vez assim que o servidor inicia
+  verificarPagamentosVencidos();
+
+  // Cria o intervalo para rodar a função a cada 60000ms (1 minuto)
+  setInterval(() => {
+    verificarPagamentosVencidos();
+  }, 60000);
 });
