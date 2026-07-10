@@ -3408,6 +3408,55 @@ async function verificarPagamentosVencidos() {
   }
 }
 
+async function verificarEventosProximos() {
+  try {
+    const hoje = new Date();
+
+    const daquiTresDias = new Date();
+    daquiTresDias.setDate(
+      hoje.getDate() + 3
+    );
+
+    const eventos =
+      await prisma.evento.findMany({
+        where: {
+          data: {
+            gte: hoje,
+            lte: daquiTresDias,
+          },
+        },
+      });
+
+    for (const evento of eventos) {
+      const jaExiste =
+        await prisma.notificacao.findFirst({
+          where: {
+            tipo: "evento_proximo",
+            descricao: {
+              contains: `Evento ${evento.id}`,
+            },
+          },
+        });
+
+      if (!jaExiste) {
+        await prisma.notificacao.create({
+          data: {
+            titulo: "Evento próximo",
+            descricao:
+              `Evento ${evento.id} - "${evento.titulo}" ocorrerá em breve.`,
+            tipo: "evento_proximo",
+          },
+        });
+      }
+    }
+  } catch (err) {
+    console.error(
+      "Erro ao verificar eventos:",
+      err
+    );
+  }
+}
+
 // -----------------------------------------------
 // Inicializar Servidor
 // -----------------------------------------------
@@ -3423,4 +3472,11 @@ app.listen(PORT, "0.0.0.0", () => {
   setInterval(() => {
     verificarPagamentosVencidos();
   }, 60000);
+  
+// Executa uma vez assim que o servidor inicia
+  verificarEventosProximos();
+// Cria o intervalo para rodar a função a cada 60000ms (1 minuto)
+setInterval(() => {
+  verificarEventosProximos();
+}, 60000);
 });
