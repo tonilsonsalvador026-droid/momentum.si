@@ -3389,15 +3389,17 @@ async function verificarPagamentosVencidos() {
         });
 
       if (!jaExiste) {
-        await prisma.notificacao.create({
-          data: {
-            titulo: "Pagamento vencido",
-            descricao: `Pagamento ${pagamento.id} da fração ${
-              pagamento.fracao?.numero || ""
-            } encontra-se vencido.`,
-            tipo: "pagamento_vencido",
-          },
-        });
+await prisma.notificacao.create({
+  data: {
+    titulo: "Pagamento vencido",
+    descricao:
+      `A fração ${
+        pagamento.fracao?.numero || ""
+      } possui um pagamento em atraso.`,
+    tipo: "pagamento_vencido",
+    referenciaId: pagamento.id,
+  },
+});
       }
     }
   } catch (err) {
@@ -3439,14 +3441,15 @@ async function verificarEventosProximos() {
         });
 
       if (!jaExiste) {
-        await prisma.notificacao.create({
-          data: {
-            titulo: "Evento próximo",
-            descricao:
-              `Evento ${evento.id} - "${evento.titulo}" ocorrerá em breve.`,
-            tipo: "evento_proximo",
-          },
-        });
+await prisma.notificacao.create({
+  data: {
+    titulo: "Evento próximo",
+    descricao:
+      `"${evento.titulo}" ocorrerá em breve.`,
+    tipo: "evento_proximo",
+    referenciaId: evento.id,
+  },
+});
       }
     }
   } catch (err) {
