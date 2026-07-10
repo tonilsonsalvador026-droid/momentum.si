@@ -3378,15 +3378,13 @@ async function verificarPagamentosVencidos() {
     });
 
     for (const pagamento of pagamentos) {
-      const jaExiste =
-        await prisma.notificacao.findFirst({
-          where: {
-            tipo: "pagamento_vencido",
-            descricao: {
-              contains: `Pagamento ${pagamento.id}`,
-            },
-          },
-        });
+const jaExiste =
+  await prisma.notificacao.findFirst({
+    where: {
+      tipo: "pagamento_vencido",
+      referenciaId: pagamento.id,
+    },
+  });
 
       if (!jaExiste) {
 await prisma.notificacao.create({
@@ -3430,15 +3428,13 @@ async function verificarEventosProximos() {
       });
 
     for (const evento of eventos) {
-      const jaExiste =
-        await prisma.notificacao.findFirst({
-          where: {
-            tipo: "evento_proximo",
-            descricao: {
-              contains: `Evento ${evento.id}`,
-            },
-          },
-        });
+const jaExiste =
+  await prisma.notificacao.findFirst({
+    where: {
+      tipo: "evento_proximo",
+      referenciaId: evento.id,
+    },
+  });
 
       if (!jaExiste) {
 await prisma.notificacao.create({
