@@ -3456,20 +3456,22 @@ await prisma.notificacao.create({
   }
 }
 
-
 async function verificarServicosAgendados() {
   try {
     const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
 
-    const amanha = new Date();
-    amanha.setDate(hoje.getDate() + 1);
+    const daquiTresDias = new Date(hoje);
+    daquiTresDias.setDate(
+      daquiTresDias.getDate() + 3
+    );
 
     const servicos =
       await prisma.servicoAgendado.findMany({
         where: {
           data: {
             gte: hoje,
-            lte: amanha,
+            lte: daquiTresDias,
           },
         },
         include: {
@@ -3492,7 +3494,9 @@ async function verificarServicosAgendados() {
           data: {
             titulo: "Serviço Agendado",
             descricao:
-              `${servico.servico.nome} está agendado para breve.`,
+              `${servico.servico.nome} está agendado para ${new Date(
+                servico.data
+              ).toLocaleDateString("pt-PT")}.`,
             tipo: "servico_agendado",
             referenciaId: servico.id,
           },
@@ -3506,6 +3510,7 @@ async function verificarServicosAgendados() {
     );
   }
 }
+
 // -----------------------------------------------
 // Inicializar Servidor
 // -----------------------------------------------
