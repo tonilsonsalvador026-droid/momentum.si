@@ -3361,10 +3361,39 @@ app.delete("/notificacoes/:id", async (req, res) => {
   }
 });
 
+// ==========================================
+// 1. VERIFICAÇÃO DE PAGAMENTOS VENCIDOS
+// ==========================================
 async function verificarPagamentosVencidos() {
   try {
     const hoje = new Date();
 
+await prisma.notificacao.deleteMany({
+      where: {
+        tipo: "pagamento_vencido",
+        referenciaId: {
+          not: null,
+        },
+        NOT: {
+          referenciaId: {
+            in: (
+              await prisma.pagamento.findMany({
+                where: {
+                  estado: "PENDENTE",
+                  vencimento: {
+                    lt: hoje,
+                  },
+                },
+                select: {
+                  id: true,
+                },
+              })
+            ).map((p) => p.id),
+          },
+        },
+      },
+    });
+    
     const pagamentos = await prisma.pagamento.findMany({
       where: {
         estado: "PENDENTE",
