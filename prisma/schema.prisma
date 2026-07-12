@@ -236,6 +236,5 @@ enum EstadoFracao {
 
 enum EstadoPagamento {
   PENDENTE
-  ATRASADO
   PAGO
 }
