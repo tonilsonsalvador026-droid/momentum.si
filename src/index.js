@@ -3456,6 +3456,56 @@ await prisma.notificacao.create({
   }
 }
 
+
+async function verificarServicosAgendados() {
+  try {
+    const hoje = new Date();
+
+    const amanha = new Date();
+    amanha.setDate(hoje.getDate() + 1);
+
+    const servicos =
+      await prisma.servicoAgendado.findMany({
+        where: {
+          data: {
+            gte: hoje,
+            lte: amanha,
+          },
+        },
+        include: {
+          servico: true,
+          edificio: true,
+        },
+      });
+
+    for (const servico of servicos) {
+      const jaExiste =
+        await prisma.notificacao.findFirst({
+          where: {
+            tipo: "servico_agendado",
+            referenciaId: servico.id,
+          },
+        });
+
+      if (!jaExiste) {
+        await prisma.notificacao.create({
+          data: {
+            titulo: "Serviço Agendado",
+            descricao:
+              `${servico.servico.nome} está agendado para breve.`,
+            tipo: "servico_agendado",
+            referenciaId: servico.id,
+          },
+        });
+      }
+    }
+  } catch (err) {
+    console.error(
+      "Erro ao verificar serviços:",
+      err
+    );
+  }
+}
 // -----------------------------------------------
 // Inicializar Servidor
 // -----------------------------------------------
@@ -3477,5 +3527,12 @@ app.listen(PORT, "0.0.0.0", () => {
 // Cria o intervalo para rodar a função a cada 60000ms (1 minuto)
 setInterval(() => {
   verificarEventosProximos();
+}, 60000);
+  
+// Executa uma vez assim que o servidor inicia
+  verificarServicosAgendados();
+// Cria o intervalo para rodar a função a cada 60000ms (1 minuto)
+setInterval(() => {
+  verificarServicosAgendados();
 }, 60000);
 });
