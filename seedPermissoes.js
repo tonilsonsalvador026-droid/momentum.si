@@ -46,10 +46,10 @@ const permissoes = [
   ["eliminar_recibos", "Eliminar recibos"],
 
   // CONTA CORRENTE
-  ["visualizar_conta_corrente", "Ver conta corrente"],
-  ["criar_conta_corrente", "Criar conta corrente"],
-  ["editar_conta_corrente", "Editar conta corrente"],
-  ["eliminar_conta_corrente", "Eliminar conta corrente"],
+  ["visualizar_contas_correntes", "Ver conta corrente"],
+  ["criar_contas_correntes", "Criar conta corrente"],
+  ["editar_contas_correntes", "Editar conta corrente"],
+  ["eliminar_contas_correntes", "Eliminar conta corrente"],
 
   // EVENTOS
   ["visualizar_eventos", "Ver eventos"],
