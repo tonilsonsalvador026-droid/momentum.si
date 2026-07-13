@@ -8,19 +8,19 @@ datasource db {
 }
 
 model User {
-  id          Int               @id @default(autoincrement())
+  id          Int                 @id @default(autoincrement())
   nome        String
-  email       String            @unique
+  email       String              @unique
   password    String?
-  role        String?           // ⚠️ Mantém os dados antigos (ex: "ADMIN")
-  criadoEm    DateTime          @default(now())
-  isActive    Boolean           @default(false)
+  role        String?             // ⚠️ Mantém os dados antigos (ex: "ADMIN")
+  criadoEm    DateTime            @default(now())
+  isActive    Boolean             @default(false)
 
   // 🆕 Nova relação com o sistema de permissões
   roleId      Int?
-  roleRel     Role?             @relation(fields: [roleId], references: [id])
+  roleRel     Role?               @relation(fields: [roleId], references: [id])
 
-  condominios Condominio[]      @relation("GestorCondominio")
+  condominios Condominio[]        @relation("GestorCondominio")
   eventos     Evento[]
   pagamentos  Pagamento[]
   servicos    ServicoAgendado[]
@@ -227,6 +227,22 @@ model Notificacao {
   user          User?    @relation(fields: [userId], references: [id])
 
   @@map("notificacoes")
+}
+
+// 🆕 Tabela de Configurações de E-mail do Sistema
+model ConfiguracaoEmail {
+  id           Int      @id @default(autoincrement())
+  smtpHost     String
+  smtpPort     Int
+  email        String
+  password     String?
+  remetente    String?
+  ssl          Boolean  @default(true)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("configuracoes_email")
 }
 
 enum EstadoFracao {
