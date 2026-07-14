@@ -343,24 +343,16 @@ app.post("/users/set-password", async (req, res) => {
 //------------------------------------------------
 app.get("/teste-email", async (req, res) => {
   try {
-    await transporter.sendMail({
-      from: `"Gestão Condomínio" <${process.env.EMAIL_FROM_ADDRESS}>`,
-      to: "tonilsonsalvador8@gmail.com",
-      subject: "Teste de Email - Momentum.si",
-      html: `
-        <h2>Teste de Email</h2>
-        <p>O sistema de emails está funcional.</p>
-      `,
-    });
+    await transporter.verify();
 
     res.json({
-      message: "Email enviado com sucesso."
+      message: "SMTP ligado com sucesso."
     });
   } catch (err) {
     console.error(err);
 
     res.status(500).json({
-      error: "Erro ao enviar email."
+      error: err.message
     });
   }
 });
