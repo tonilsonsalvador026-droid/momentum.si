@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -337,6 +336,32 @@ app.post("/users/set-password", async (req, res) => {
   } catch (err) {
     console.error("Erro em /users/set-password:", err);
     return res.status(400).json({ error: "Token inválido ou expirado." });
+  }
+});
+// -----------------------------------------------
+// EMAIL
+//------------------------------------------------
+app.get("/teste-email", async (req, res) => {
+  try {
+    await transporter.sendMail({
+      from: `"Gestão Condomínio" <${process.env.EMAIL_FROM_ADDRESS}>`,
+      to: "tonilsonsalvador8@gmail.com",
+      subject: "Teste de Email - Momentum.si",
+      html: `
+        <h2>Teste de Email</h2>
+        <p>O sistema de emails está funcional.</p>
+      `,
+    });
+
+    res.json({
+      message: "Email enviado com sucesso."
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Erro ao enviar email."
+    });
   }
 });
 
