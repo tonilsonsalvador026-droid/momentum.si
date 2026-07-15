@@ -343,24 +343,32 @@ app.post("/users/set-password", async (req, res) => {
 //------------------------------------------------
 app.get("/teste-email", async (req, res) => {
   try {
+    console.log("SMTP_HOST:", process.env.SMTP_HOST);
+    console.log("SMTP_PORT:", process.env.SMTP_PORT);
+    console.log("SMTP_USER:", process.env.SMTP_USER);
+
+    await transporter.verify();
+
+    console.log("SMTP OK");
+
     await transporter.sendMail({
       from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
       to: "tonilsonsalvador8@gmail.com",
-      subject: "Teste de Email - Momentum.si",
-      html: `
-        <h2>Teste de Email</h2>
-        <p>O sistema de emails está funcional.</p>
-      `,
+      subject: "Teste de Email",
+      html: "<h1>Teste</h1>",
     });
 
     res.json({
-      message: "Email enviado com sucesso."
+      message: "Email enviado.",
     });
   } catch (err) {
+    console.error("ERRO SMTP:");
     console.error(err);
 
     res.status(500).json({
-      error: err.message
+      error: err.message,
+      code: err.code,
+      response: err.response,
     });
   }
 });
