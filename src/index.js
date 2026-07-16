@@ -11,6 +11,7 @@ const authMiddleware = require("../authMiddleware");
 const permissao = require("../permissaoMiddleware");
 const checkPermissao = require("../checkPermissao");
 const { sendInviteEmail } = require("../mailer"); // 👉 importar mailer
+const { enviarEmail } = require("./services/emailService");
 
 // -----------------------------------------------
 // App & Prisma
@@ -343,32 +344,19 @@ app.post("/users/set-password", async (req, res) => {
 //------------------------------------------------
 app.get("/teste-email", async (req, res) => {
   try {
-    console.log("SMTP_HOST:", process.env.SMTP_HOST);
-    console.log("SMTP_PORT:", process.env.SMTP_PORT);
-    console.log("SMTP_USER:", process.env.SMTP_USER);
-
-    await transporter.verify();
-
-    console.log("SMTP OK");
-
-    await transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-      to: "tonilsonsalvador8@gmail.com",
-      subject: "Teste de Email",
-      html: "<h1>Teste</h1>",
+    await enviarEmail({
+      para: "tonilsonsalvador8@gmail.com",
+      assunto: "Teste de Email",
+      html: "<h1>Teste Momentum.si</h1>",
     });
 
     res.json({
-      message: "Email enviado.",
+      message: "Email enviado com sucesso.",
     });
   } catch (err) {
-    console.error("ERRO SMTP:");
-    console.error(err);
-
     res.status(500).json({
       error: err.message,
       code: err.code,
-      response: err.response,
     });
   }
 });
