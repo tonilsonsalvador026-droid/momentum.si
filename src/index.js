@@ -11,8 +11,7 @@ const authMiddleware = require("../authMiddleware");
 const permissao = require("../permissaoMiddleware");
 const checkPermissao = require("../checkPermissao");
 const { sendInviteEmail } = require("../mailer"); // 👉 importar mailer
-const { enviarEmail } = require("./services/emailService");
-
+const { enviarEmail } = require("../services/emailService");
 // -----------------------------------------------
 // App & Prisma
 // -----------------------------------------------
