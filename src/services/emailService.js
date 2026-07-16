@@ -1,5 +1,19 @@
 import nodemailer from "nodemailer";
-import { prisma } from "../prisma.js";
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === "true",
+
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
+});
 
 export async function enviarEmail({
   para,
@@ -7,47 +21,16 @@ export async function enviarEmail({
   html,
 }) {
   try {
-    const config =
-      await prisma.configuracaoEmail.findFirst({
-        where: {
-          ativo: true,
-        },
-      });
-
-    if (!config) {
-      throw new Error(
-        "Nenhuma configuração de email ativa."
-      );
-    }
-
-    const transporter =
-      nodemailer.createTransport({
-        host: config.smtpHost,
-        port: config.smtpPort,
-        secure: false,
-        auth: {
-          user: config.email,
-          pass: config.password,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
-
     await transporter.sendMail({
-      from: `"${config.remetente}" <${config.email}>`,
+      from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
       to: para,
       subject: assunto,
       html,
     });
 
-    console.log(
-      `✅ Email enviado para ${para}`
-    );
+    console.log(`✅ Email enviado para ${para}`);
   } catch (err) {
-    console.error(
-      "Erro ao enviar email:",
-      err
-    );
+    console.error("Erro ao enviar email:", err);
+    throw err;
   }
 }
