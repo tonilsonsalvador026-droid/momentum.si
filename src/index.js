@@ -307,6 +307,79 @@ app.post("/users/invite", authMiddleware("admin"), async (req, res) => {
 });
 
 // -----------------------------------------------
+// PERFIL DO UTILIZADOR
+// -----------------------------------------------
+app.get("/perfil", authMiddleware(), async (req, res) => {
+  try {
+    const utilizador = await prisma.user.findUnique({
+      where: {
+        id: req.user.id,
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        avatar: true,
+        criadoEm: true,
+      },
+    });
+
+    if (!utilizador) {
+      return res.status(404).json({
+        error: "Utilizador não encontrado.",
+      });
+    }
+
+    res.json(utilizador);
+
+  } catch (err) {
+    console.error("Erro em GET /perfil:", err);
+
+    res.status(500).json({
+      error: "Erro ao obter perfil.",
+    });
+  }
+});
+
+app.put("/perfil", authMiddleware(), async (req, res) => {
+  try {
+    const {
+      nome,
+      email,
+    } = req.body;
+
+    const utilizador =
+      await prisma.user.update({
+        where: {
+          id: req.user.id,
+        },
+
+        data: {
+          nome,
+          email,
+        },
+
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          avatar: true,
+        },
+      });
+
+    res.json(utilizador);
+
+  } catch (err) {
+
+    console.error("Erro em PUT /perfil:", err);
+
+    res.status(500).json({
+      error: "Erro ao atualizar perfil.",
+    });
+  }
+});
+
+// -----------------------------------------------
 // Definir senha (convite)
 // -----------------------------------------------
 app.post("/users/set-password", async (req, res) => {
