@@ -16,6 +16,8 @@ model User {
   criadoEm    DateTime            @default(now())
   isActive    Boolean             @default(false)
 
+  avatar      String?
+
   // 🆕 Nova relação com o sistema de permissões
   roleId      Int?
   roleRel     Role?               @relation(fields: [roleId], references: [id])
