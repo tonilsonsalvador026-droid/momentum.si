@@ -338,27 +338,6 @@ app.post("/users/set-password", async (req, res) => {
     return res.status(400).json({ error: "Token inválido ou expirado." });
   }
 });
-// -----------------------------------------------
-// EMAIL
-//------------------------------------------------
-app.get("/teste-email", async (req, res) => {
-  try {
-    await enviarEmail({
-      para: "tonilsonsalvador8@gmail.com",
-      assunto: "Teste de Email",
-      html: "<h1>Teste Momentum.si</h1>",
-    });
-
-    res.json({
-      message: "Email enviado com sucesso.",
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: err.message,
-      code: err.code,
-    });
-  }
-});
 
 // -----------------------------------------------
 // USERS (CRUD básico)
