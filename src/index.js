@@ -309,6 +309,8 @@ app.post("/users/invite", authMiddleware("admin"), async (req, res) => {
 // -----------------------------------------------
 // PERFIL DO UTILIZADOR
 // -----------------------------------------------
+
+// Obter perfil do utilizador autenticado
 app.get("/perfil", authMiddleware(), async (req, res) => {
   try {
     const utilizador = await prisma.user.findUnique({
@@ -320,7 +322,31 @@ app.get("/perfil", authMiddleware(), async (req, res) => {
         nome: true,
         email: true,
         avatar: true,
+        telefone: true,
+        nif: true,
+        dataNascimento: true,
+        dataDocumento: true,
+        role: true,
         criadoEm: true,
+        isActive: true,
+        // Inclui o cargo e as permissões associadas
+        roleRel: {
+          select: {
+            id: true,
+            nome: true,
+            permissoes: {
+              select: {
+                permissao: {
+                  select: {
+                    id: true,
+                    chave: true,
+                    descricao: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -330,50 +356,96 @@ app.get("/perfil", authMiddleware(), async (req, res) => {
       });
     }
 
-    res.json(utilizador);
+    return res.json(utilizador);
 
   } catch (err) {
     console.error("Erro em GET /perfil:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Erro ao obter perfil.",
     });
   }
 });
 
+
+// Atualizar perfil do utilizador autenticado
 app.put("/perfil", authMiddleware(), async (req, res) => {
   try {
     const {
       nome,
       email,
-    } = req.body;
+      avatar,
+      telefone,
+      nif,
+      dataNascimento,
+      dataDocumento,
+    } = req.body || {};
 
-    const utilizador =
-      await prisma.user.update({
-        where: {
+    // Validação do nome
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "O nome é obrigatório.",
+      });
+    }
+
+    // Validação do email
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        error: "O e-mail é obrigatório.",
+      });
+    }
+
+    // Verificar se o email já pertence a outro utilizador
+    const emailExistente = await prisma.user.findFirst({
+      where: {
+        email: email.trim(),
+        NOT: {
           id: req.user.id,
         },
+      },
+    });
 
-        data: {
-          nome,
-          email,
-        },
-
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          avatar: true,
-        },
+    if (emailExistente) {
+      return res.status(409).json({
+        error: "Este e-mail já está associado a outro utilizador.",
       });
+    }
 
-    res.json(utilizador);
+    const utilizador = await prisma.user.update({
+      where: {
+        id: req.user.id,
+      },
+
+      data: {
+        nome: nome.trim(),
+        email: email.trim(),
+        avatar: avatar?.trim() || null,
+        telefone: telefone?.trim() || null,
+        nif: nif?.trim() || null,
+        dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
+        dataDocumento: dataDocumento ? new Date(dataDocumento) : null,
+      },
+
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        avatar: true,
+        telefone: true,
+        nif: true,
+        dataNascimento: true,
+        dataDocumento: true,
+        role: true,
+        criadoEm: true,
+      },
+    });
+
+    return res.json(utilizador);
 
   } catch (err) {
-
     console.error("Erro em PUT /perfil:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Erro ao atualizar perfil.",
     });
   }
