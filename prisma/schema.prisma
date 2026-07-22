@@ -18,6 +18,12 @@ model User {
 
   avatar      String?
 
+  // Dados pessoais do utilizador
+  telefone        String?
+  nif             String?
+  dataNascimento  DateTime?
+  dataDocumento   DateTime?
+
   // 🆕 Nova relação com o sistema de permissões
   roleId      Int?
   roleRel     Role?               @relation(fields: [roleId], references: [id])
