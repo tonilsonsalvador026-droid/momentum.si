@@ -7,6 +7,8 @@ const path = require("path");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { v2: cloudinary } = require("cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const authMiddleware = require("../authMiddleware");
 const permissao = require("../permissaoMiddleware");
 const checkPermissao = require("../checkPermissao");
@@ -17,6 +19,38 @@ const { enviarEmail } = require("./services/emailService");
 // -----------------------------------------------
 const app = express();
 const prisma = new PrismaClient();
+
+// -----------------------------------------------
+// Configuração do Cloudinary
+// -----------------------------------------------
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Storage do Cloudinary exclusivo para Avatars
+const avatarStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "momentum-si/avatars",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation: [
+      {
+        width: 500,
+        height: 500,
+        crop: "fill",
+        gravity: "face",
+        quality: "auto",
+        fetch_format: "auto",
+      },
+    ],
+  },
+});
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limite de 5MB
+});
 
 // -----------------------------------------------
 // Uploads (multer)
@@ -310,20 +344,14 @@ app.post("/users/invite", authMiddleware("admin"), async (req, res) => {
 // PERFIL DO UTILIZADOR
 // -----------------------------------------------
 
-// Obter perfil do utilizador autenticado
 app.get("/perfil", authMiddleware(), async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res.status(401).json({
-        error: "Utilizador não autenticado.",
-      });
+      return res.status(401).json({ error: "Utilizador não autenticado." });
     }
 
     const utilizador = await prisma.user.findUnique({
-      where: {
-        id: Number(req.user.id),
-      },
-
+      where: { id: Number(req.user.id) },
       select: {
         id: true,
         nome: true,
@@ -333,22 +361,15 @@ app.get("/perfil", authMiddleware(), async (req, res) => {
         roleId: true,
         criadoEm: true,
         isActive: true,
-
-        // Cargo e permissões associadas
         roleRel: {
           select: {
             id: true,
             nome: true,
             descricao: true,
-
             permissoes: {
               select: {
                 permissao: {
-                  select: {
-                    id: true,
-                    nome: true,
-                    descricao: true,
-                  },
+                  select: { id: true, nome: true, descricao: true },
                 },
               },
             },
@@ -358,91 +379,43 @@ app.get("/perfil", authMiddleware(), async (req, res) => {
     });
 
     if (!utilizador) {
-      return res.status(404).json({
-        error: "Utilizador não encontrado.",
-      });
+      return res.status(404).json({ error: "Utilizador não encontrado." });
     }
 
     return res.status(200).json(utilizador);
-
   } catch (err) {
-    console.error("========================================");
-    console.error("❌ ERRO EM GET /perfil");
-    console.error("========================================");
-    console.error(err);
-
-    return res.status(500).json({
-      error: "Erro ao obter perfil.",
-    });
+    console.error("❌ ERRO EM GET /perfil", err);
+    return res.status(500).json({ error: "Erro ao obter perfil." });
   }
 });
-
-
-// -----------------------------------------------
-// ATUALIZAR PERFIL DO UTILIZADOR AUTENTICADO
-// -----------------------------------------------
 
 app.put("/perfil", authMiddleware(), async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res.status(401).json({
-        error: "Utilizador não autenticado.",
-      });
+      return res.status(401).json({ error: "Utilizador não autenticado." });
     }
 
-    const {
-      nome,
-      email,
-      avatar,
-    } = req.body || {};
-
-    // -----------------------------------------------
-    // VALIDAR NOME
-    // -----------------------------------------------
+    const { nome, email, avatar } = req.body || {};
 
     if (!nome || !nome.trim()) {
-      return res.status(400).json({
-        error: "O nome é obrigatório.",
-      });
+      return res.status(400).json({ error: "O nome é obrigatório." });
     }
-
-    // -----------------------------------------------
-    // VALIDAR EMAIL
-    // -----------------------------------------------
-
     if (!email || !email.trim()) {
-      return res.status(400).json({
-        error: "O e-mail é obrigatório.",
-      });
+      return res.status(400).json({ error: "O e-mail é obrigatório." });
     }
-
-    // -----------------------------------------------
-    // VERIFICAR SE O UTILIZADOR EXISTE
-    // -----------------------------------------------
 
     const utilizadorExistente = await prisma.user.findUnique({
-      where: {
-        id: Number(req.user.id),
-      },
+      where: { id: Number(req.user.id) },
     });
 
     if (!utilizadorExistente) {
-      return res.status(404).json({
-        error: "Utilizador não encontrado.",
-      });
+      return res.status(404).json({ error: "Utilizador não encontrado." });
     }
-
-    // -----------------------------------------------
-    // VERIFICAR SE O EMAIL JÁ EXISTE
-    // -----------------------------------------------
 
     const emailExistente = await prisma.user.findFirst({
       where: {
         email: email.trim(),
-
-        NOT: {
-          id: Number(req.user.id),
-        },
+        NOT: { id: Number(req.user.id) },
       },
     });
 
@@ -452,21 +425,13 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
       });
     }
 
-    // -----------------------------------------------
-    // ATUALIZAR PERFIL
-    // -----------------------------------------------
-
     const utilizador = await prisma.user.update({
-      where: {
-        id: Number(req.user.id),
-      },
-
+      where: { id: Number(req.user.id) },
       data: {
         nome: nome.trim(),
         email: email.trim(),
         avatar: avatar?.trim() || null,
       },
-
       select: {
         id: true,
         nome: true,
@@ -476,21 +441,15 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
         roleId: true,
         criadoEm: true,
         isActive: true,
-
         roleRel: {
           select: {
             id: true,
             nome: true,
             descricao: true,
-
             permissoes: {
               select: {
                 permissao: {
-                  select: {
-                    id: true,
-                    nome: true,
-                    descricao: true,
-                  },
+                  select: { id: true, nome: true, descricao: true },
                 },
               },
             },
@@ -500,23 +459,14 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
     });
 
     return res.status(200).json(utilizador);
-
   } catch (err) {
-    console.error("========================================");
-    console.error("❌ ERRO EM PUT /perfil");
-    console.error("========================================");
-    console.error(err);
-
-    // Email duplicado
+    console.error("❌ ERRO EM PUT /perfil", err);
     if (err.code === "P2002") {
       return res.status(409).json({
         error: "Este e-mail já está associado a outro utilizador.",
       });
     }
-
-    return res.status(500).json({
-      error: "Erro ao atualizar perfil.",
-    });
+    return res.status(500).json({ error: "Erro ao atualizar perfil." });
   }
 });
 
