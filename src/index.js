@@ -521,6 +521,63 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
 });
 
 // -----------------------------------------------
+// UPLOAD DE FOTOGRAFIA DE PERFIL
+// -----------------------------------------------
+app.post(
+  "/perfil/avatar",
+  authMiddleware(),
+  upload.single("avatar"),
+  async (req, res) => {
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({
+          error: "Utilizador não autenticado.",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Nenhuma imagem foi enviada.",
+        });
+      }
+
+      // Caminho relativo gravado na BD (ex: /uploads/1690000000-foto.jpg)
+      const avatarUrl = `/uploads/${req.file.filename}`;
+
+      const utilizador = await prisma.user.update({
+        where: {
+          id: Number(req.user.id),
+        },
+        data: {
+          avatar: avatarUrl,
+        },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          avatar: true,
+          role: true,
+          roleId: true,
+          criadoEm: true,
+          isActive: true,
+        },
+      });
+
+      return res.status(200).json(utilizador);
+    } catch (err) {
+      console.error("========================================");
+      console.error("❌ ERRO EM POST /perfil/avatar");
+      console.error("========================================");
+      console.error(err);
+
+      return res.status(500).json({
+        error: "Erro ao atualizar fotografia de perfil.",
+      });
+    }
+  }
+);
+
+// -----------------------------------------------
 // Definir senha (convite)
 // -----------------------------------------------
 app.post("/users/set-password", async (req, res) => {
