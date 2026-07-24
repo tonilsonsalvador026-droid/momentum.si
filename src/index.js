@@ -472,71 +472,133 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
 
 // -----------------------------------------------
 // UPLOAD DE FOTOGRAFIA DE PERFIL
+// CLOUDINARY
 // -----------------------------------------------
+
 app.post(
   "/perfil/avatar",
   authMiddleware(),
   uploadAvatar.single("avatar"),
   async (req, res) => {
     try {
+      console.log("========================================");
+      console.log("📸 INÍCIO DO UPLOAD DE AVATAR");
+      console.log("========================================");
+
+      // Verificar autenticação
+      console.log("👤 Utilizador autenticado:", req.user);
+
       if (!req.user || !req.user.id) {
+        console.error("❌ Utilizador não autenticado.");
+
         return res.status(401).json({
           error: "Utilizador não autenticado.",
         });
       }
 
+      // Verificar se o Multer recebeu o ficheiro
+      console.log("📁 Ficheiro recebido:", req.file);
+
       if (!req.file) {
+        console.error("❌ Nenhum ficheiro foi recebido.");
+
         return res.status(400).json({
           error: "Nenhuma imagem foi enviada.",
         });
       }
 
-      // URL permanente fornecida pelo Cloudinary
-      const avatarUrl = req.file.path;
+      // URL devolvida pelo Cloudinary
+      const avatarUrl =
+        req.file.path || req.file.secure_url || req.file.url;
 
-      const utilizador = await prisma.user.update({
-        where: {
-          id: Number(req.user.id),
-        },
+      console.log("☁️ URL devolvida pelo Cloudinary:", avatarUrl);
 
-        data: {
-          avatar: avatarUrl,
-        },
+      if (!avatarUrl) {
+        console.error(
+          "❌ O Cloudinary não devolveu uma URL válida."
+        );
 
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          avatar: true,
-          role: true,
-          roleId: true,
-          criadoEm: true,
-          isActive: true,
+        return res.status(500).json({
+          error:
+            "A imagem foi recebida, mas o Cloudinary não devolveu o endereço da imagem.",
+        });
+      }
 
-          roleRel: {
-            select: {
-              id: true,
-              nome: true,
-              descricao: true,
+      // Verificar se o utilizador existe na base de dados
+      const utilizadorExistente =
+        await prisma.user.findUnique({
+          where: {
+            id: Number(req.user.id),
+          },
+        });
 
-              permissoes: {
-                select: {
-                  permissao: {
-                    select: {
-                      id: true,
-                      nome: true,
-                      descricao: true,
+      if (!utilizadorExistente) {
+        console.error(
+          "❌ Utilizador não encontrado na base de dados."
+        );
+
+        return res.status(404).json({
+          error: "Utilizador não encontrado.",
+        });
+      }
+
+      // Atualizar o avatar na base de dados
+      const utilizador =
+        await prisma.user.update({
+          where: {
+            id: Number(req.user.id),
+          },
+
+          data: {
+            avatar: avatarUrl,
+          },
+
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            avatar: true,
+            role: true,
+            roleId: true,
+            criadoEm: true,
+            isActive: true,
+
+            roleRel: {
+              select: {
+                id: true,
+                nome: true,
+                descricao: true,
+
+                permissoes: {
+                  select: {
+                    permissao: {
+                      select: {
+                        id: true,
+                        nome: true,
+                        descricao: true,
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-      });
+        });
+
+      console.log(
+        "✅ Avatar guardado com sucesso na base de dados."
+      );
+
+      console.log(
+        "🖼️ URL final:",
+        utilizador.avatar
+      );
+
+      console.log("========================================");
 
       return res.status(200).json({
-        message: "Fotografia de perfil atualizada com sucesso.",
+        message:
+          "Fotografia de perfil atualizada com sucesso.",
         user: utilizador,
       });
 
@@ -544,10 +606,18 @@ app.post(
       console.error("========================================");
       console.error("❌ ERRO EM POST /perfil/avatar");
       console.error("========================================");
-      console.error(err);
+
+      console.error("Mensagem:", err.message);
+      console.error("Código:", err.code);
+      console.error("Stack:", err.stack);
 
       return res.status(500).json({
-        error: "Erro ao atualizar fotografia de perfil.",
+        error:
+          "Erro ao atualizar fotografia de perfil.",
+        details:
+          process.env.NODE_ENV !== "production"
+            ? err.message
+            : undefined,
       });
     }
   }
