@@ -29,6 +29,47 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// -----------------------------------------------
+// TESTE DE CONEXÃO COM CLOUDINARY (Rota temporária)
+// -----------------------------------------------
+app.get("/test/cloudinary", async (req, res) => {
+  try {
+    console.log("========================================");
+    console.log("☁️ TESTE DE CONEXÃO COM CLOUDINARY");
+    console.log("========================================");
+
+    console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
+    console.log("API Key:", process.env.CLOUDINARY_API_KEY);
+    console.log(
+      "API Secret configurado:",
+      process.env.CLOUDINARY_API_SECRET ? "SIM" : "NÃO"
+    );
+
+    const resultado = await cloudinary.api.ping();
+
+    console.log("✅ RESPOSTA DO CLOUDINARY:", resultado);
+
+    return res.status(200).json({
+      success: true,
+      message: "Cloudinary conectado com sucesso.",
+      cloudinary: resultado,
+    });
+  } catch (err) {
+    console.error("========================================");
+    console.error("❌ ERRO NA CONEXÃO COM CLOUDINARY");
+    console.error("========================================");
+
+    console.error("Mensagem:", err.message);
+    console.error("Código:", err.error?.http_code);
+    console.error("Detalhes:", err);
+
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
+
 // Storage do Cloudinary exclusivo para Avatars
 const avatarStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
