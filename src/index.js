@@ -457,15 +457,23 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
       return res.status(401).json({ error: "Utilizador não autenticado." });
     }
 
-    const { nome, email, avatar } = req.body || {};
+    // 1. Extrair TODOS os campos enviados pela página de perfil
+    const {
+      nome,
+      email,
+      avatar,
+      telefone,
+      nif,
+      dataNascimento,
+      dataDocumento,
+    } = req.body || {};
 
+    // 2. Validação simples: apenas o nome é estritamente obrigatório
     if (!nome || !nome.trim()) {
       return res.status(400).json({ error: "O nome é obrigatório." });
     }
-    if (!email || !email.trim()) {
-      return res.status(400).json({ error: "O e-mail é obrigatório." });
-    }
 
+    // 3. Procura o utilizador atual no banco de dados
     const utilizadorExistente = await prisma.user.findUnique({
       where: { id: Number(req.user.id) },
     });
@@ -474,31 +482,47 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
       return res.status(404).json({ error: "Utilizador não encontrado." });
     }
 
-    const emailExistente = await prisma.user.findFirst({
-      where: {
-        email: email.trim(),
-        NOT: { id: Number(req.user.id) },
-      },
-    });
+    // 4. Tratar o e-mail (se não for enviado no body, usa o e-mail atual do utilizador)
+    const novoEmail = email && email.trim() ? email.trim() : utilizadorExistente.email;
 
-    if (emailExistente) {
-      return res.status(409).json({
-        error: "Este e-mail já está associado a outro utilizador.",
+    // Se o e-mail mudou, verifica se já pertence a outra pessoa
+    if (novoEmail !== utilizadorExistente.email) {
+      const emailExistente = await prisma.user.findFirst({
+        where: {
+          email: novoEmail,
+          NOT: { id: Number(req.user.id) },
+        },
       });
+
+      if (emailExistente) {
+        return res.status(409).json({
+          error: "Este e-mail já está associado a outro utilizador.",
+        });
+      }
     }
 
+    // 5. Atualizar o utilizador com TODOS os campos do teu schema.prisma
     const utilizador = await prisma.user.update({
       where: { id: Number(req.user.id) },
       data: {
         nome: nome.trim(),
-        email: email.trim(),
-        avatar: avatar?.trim() || null,
+        email: novoEmail,
+        avatar: avatar ? avatar.trim() : utilizadorExistente.avatar,
+        telefone: telefone ? telefone.trim() : null,
+        nif: nif ? nif.trim() : null,
+        // Converte as datas recebidas em string/ISO para objetos Date do JS (exigido pelo Prisma)
+        dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
+        dataDocumento: dataDocumento ? new Date(dataDocumento) : null,
       },
       select: {
         id: true,
         nome: true,
         email: true,
         avatar: true,
+        telefone: true,
+        nif: true,
+        dataNascimento: true,
+        dataDocumento: true,
         role: true,
         roleId: true,
         criadoEm: true,
