@@ -476,7 +476,7 @@ app.put("/perfil", authMiddleware(), async (req, res) => {
 app.post(
   "/perfil/avatar",
   authMiddleware(),
-  upload.single("avatar"),
+  uploadAvatar.single("avatar"),
   async (req, res) => {
     try {
       if (!req.user || !req.user.id) {
@@ -491,16 +491,18 @@ app.post(
         });
       }
 
-      // Caminho relativo gravado na BD (ex: /uploads/1690000000-foto.jpg)
-      const avatarUrl = `/uploads/${req.file.filename}`;
+      // URL permanente fornecida pelo Cloudinary
+      const avatarUrl = req.file.path;
 
       const utilizador = await prisma.user.update({
         where: {
           id: Number(req.user.id),
         },
+
         data: {
           avatar: avatarUrl,
         },
+
         select: {
           id: true,
           nome: true,
@@ -510,10 +512,34 @@ app.post(
           roleId: true,
           criadoEm: true,
           isActive: true,
+
+          roleRel: {
+            select: {
+              id: true,
+              nome: true,
+              descricao: true,
+
+              permissoes: {
+                select: {
+                  permissao: {
+                    select: {
+                      id: true,
+                      nome: true,
+                      descricao: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
 
-      return res.status(200).json(utilizador);
+      return res.status(200).json({
+        message: "Fotografia de perfil atualizada com sucesso.",
+        user: utilizador,
+      });
+
     } catch (err) {
       console.error("========================================");
       console.error("❌ ERRO EM POST /perfil/avatar");
