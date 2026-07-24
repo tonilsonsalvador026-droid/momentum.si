@@ -29,6 +29,27 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+app.get("/test/cloudinary", async (req, res) => {
+  try {
+    const resultado = await cloudinary.api.ping();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cloudinary conectado com sucesso.",
+      resultado,
+    });
+  } catch (error) {
+    console.error("❌ ERRO CLOUDINARY:");
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.http_code || null,
+    });
+  }
+});
+
 // -----------------------------------------------
 // TESTE DE CONEXÃO COM CLOUDINARY (Rota temporária)
 // -----------------------------------------------
